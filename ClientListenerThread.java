@@ -55,6 +55,7 @@ public class ClientListenerThread implements Runnable {
                 while (pktArr[(globalSeqNum)%ARRAY_SIZE] != null) {
                 	System.out.println("DEBUG: FOUND GLOBAL SEQ NUM: " + globalSeqNum);
                 	MPacket pkt = pktArr[(globalSeqNum)%ARRAY_SIZE];
+                	client = clientTable.get(pkt.name);
                 	executeEvent(client, pkt.event);
                 	pktArr[(globalSeqNum)%ARRAY_SIZE] = null;
                 	globalSeqNum++;
