@@ -15,7 +15,6 @@ public class ClientListenerThread implements Runnable {
 	private MSocket mSocket  =  null;
     private Hashtable<String, Client> clientTable = null;
     private Integer globalSeqNum = 0;
-    private Integer lowSeqNum = 0;
     private	MPacket[] pktArr = null; 
     
     
@@ -23,7 +22,6 @@ public class ClientListenerThread implements Runnable {
                                 Hashtable<String, Client> clientTable){
         this.mSocket = mSocket;
         this.clientTable = clientTable;
-        this.globalSeqNum = 1;	/*We know this to be the initial value that the server sends. We also know all clients must join before the game can begin, so they will all inevitably be waiting for pkt with seq# 1 first*/
         this.pktArr = new MPacket[ARRAY_SIZE];
         if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
     }
@@ -35,67 +33,33 @@ public class ClientListenerThread implements Runnable {
         while(true){
             try{
                 received = (MPacket) mSocket.readObject();
-                System.out.println("Received " + received);
+                System.out.println("Received " + received + "Received Type: " + received.event);
                 client = clientTable.get(received.name);
                 
-                if(received.sequenceNumber == globalSeqNum) {/*if this is the next packet we are expecting all is well, 
-                execute its event*/
-        
-                	if(Debug.debug) System.out.println("recvd correct pkt #: " + received.sequenceNumber);
-                	
+                // CASE 1: Received Seq # EQUAL Global Seq #
+                if (received.sequenceNumber == globalSeqNum) {
+                	System.out.println("DEBUG: MATCHING SEQ NUMBERS!");
+                	globalSeqNum++;
                 	executeEvent(client, received.event);
-                    globalSeqNum ++;	/*Increment the Global Sequence number, i.e. the next pkt we're expecting. 
-                    ONLY DO THIS IF we've got the previous seq# we were looking for and and executed it. 
-                    Only do this after executeEvent.
-                    Could potentially inline it in there if we wanted to, but that makes code slightly less readable.*/
-                	
-                } else { /*The packet we received is out of order, and so we need to store it somewhere so we can use it
-                	when it is time for it to be used.*/
-                	System.out.println("DEBUG: RECV'D PKT #: " + received.sequenceNumber + " GLOBAL PACKET #: " + globalSeqNum);
-                	if(received.sequenceNumber < lowSeqNum) 
-                		lowSeqNum = received.sequenceNumber;
-                	
-                	pktArr[(received.sequenceNumber)%ARRAY_SIZE] = received;
-                	      	
-                	
                 }
-                                
-                if(globalSeqNum >= lowSeqNum) { /*This means that the next action we're expecting could have already been 
-                received and be currently stored in the pktArr. Check the pktArr for it at the relevant index.*/
-                	
-                	if(pktArr[globalSeqNum%ARRAY_SIZE] != null) {
-                		MPacket candidate = pktArr[globalSeqNum%ARRAY_SIZE];
-                		
-                		if(candidate.sequenceNumber == globalSeqNum) {//We found what we're looking for! Execute it
-                			pktArr[globalSeqNum%ARRAY_SIZE] = null;//Clear that index in the array! 
-                			
-                			if(Debug.debug) System.out.println("correct pkt was stored #: " + candidate.sequenceNumber);
-                			
-                			executeEvent(client, candidate.event);
-                            globalSeqNum ++; /*Increment the Global Sequence number, i.e. the next pkt we're expecting.
-                            ONLY DO THIS IF we've got the previous seq# we were looking for and and executed it. 
-                            Only do this after executeEvent.
-                            Could potentially inline it in there if we wanted to, but that makes code slightly less readable.*/
-                			
-                		} else { /*This is the dreaded case! We've gotten the corner case we discussed of 2 & 258 or whatever 
-                		else we need to figure out some elegant way to handle this highly unlikely edge case*/
-                			
-                			client.unregisterMaze(); //CLIENT.ABORTLIFE shit be fucked homie, it's time to peace the fuck out.
-                			
-                		}
-                	} else {/*This means that there was nothing stored at that index in the array, so we haven't received the
-                	packet we're looking for (in the sequence) This means we need to keep waiting to receive it from the
-                	server. This is only here for clarity/readability's sake, there is no active code here.
-                	REMOVE*/
-                		
-                	}
-                	
-                } else {/*The next packet we want in terms of sequence numbers has definitely not been received and stored 
-                yet, this means that there is no need to check the array for it.
-                This is only here for clarity/readability's sake, there is no active code here.
-                REMOVE*/
-                	
+                
+                else {
+                	// CASE 2: Not a match, store in buffer...
+                    System.out.println("DEBUG: NOT A MATCH!");
+                    System.out.println("DEBUG: REC SEQ #: " + received.sequenceNumber  + " GLOBAL SEQ #: " + globalSeqNum);
+                    
+                    pktArr[(received.sequenceNumber)%ARRAY_SIZE] = received;
                 }
+
+                // if we find the next sequence number in the queue, lets process it.
+                while (pktArr[(globalSeqNum)%ARRAY_SIZE] != null) {
+                	System.out.println("DEBUG: FOUND GLOBAL SEQ NUM: " + globalSeqNum);
+                	MPacket pkt = pktArr[(globalSeqNum)%ARRAY_SIZE];
+                	executeEvent(client, pkt.event);
+                	pktArr[(globalSeqNum)%ARRAY_SIZE] = null;
+                	globalSeqNum++;
+                }
+
                    
             }catch(IOException e){
                 Thread.currentThread().interrupt();    
