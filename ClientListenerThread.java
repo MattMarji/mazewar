@@ -94,19 +94,5 @@ public class ClientListenerThread implements Runnable {
         }
     	
     }
-    
-//	if(received.event == MPacket.UP){
-//  client.forward();
-//}else if(received.event == MPacket.DOWN){
-//  client.backup();
-//}else if(received.event == MPacket.LEFT){
-//  client.turnLeft();
-//}else if(received.event == MPacket.RIGHT){
-//  client.turnRight();
-//}else if(received.event == MPacket.FIRE){
-//  client.fire();
-//}else{
-//  throw new UnsupportedOperationException();
-//} 
-    
+
 }

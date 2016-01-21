@@ -35,7 +35,7 @@ public class MSocket{
     //for delay
     public final double DELAY_THRESHOLD = 0.0;
     
-    //The degree of packet reordereding caused by the network
+    //The degree of packet reordering caused by the network
     //value should be [0, 1]
     //0 means ordered
     public final double UNORDER_FACTOR = 1.0; 
@@ -77,11 +77,11 @@ public class MSocket{
             try{
                 
                 Object incoming = in.readObject();
-                if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
-                if(Debug.debug) System.out.println("Received packet: " + incoming);
+                //if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
+//                if(Debug.debug) System.out.println("Received packet: " + incoming);
                 while(incoming != null){
-                    if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
-                    if(Debug.debug) System.out.println("Received packet: " + incoming);
+//                    if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
+//                    if(Debug.debug) System.out.println("Received packet: " + incoming);
                     ingressQueue.put(incoming);
                     incoming = in.readObject();
                 }
