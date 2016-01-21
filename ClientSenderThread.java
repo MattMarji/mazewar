@@ -23,7 +23,7 @@ public class ClientSenderThread implements Runnable {
                 //Take packet from queue
                 toServer = (MPacket)eventQueue.take();
                 //if(toServer.sequenceNumber == 0) { Probably don't even need this check, seeing as all packets sent from the client to the server have sequence number 0.
-                	toServer.sequenceNumber = seqNum;
+                	toServer.sequenceNumber = seqNum; /*adding a seqNum to packets sent from the client to the server to ensure they are processed in order at the server side*/
                 	seqNum ++;
             	//}
                 	

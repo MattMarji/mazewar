@@ -30,26 +30,30 @@ public class ServerListenerThread implements Runnable {
                 received = (MPacket) mSocket.readObject();
                 if(Debug.debug) System.out.println("Received: " + received);
 		
-		if(received.sequenceNumber == clientSeqNum) {
-                	eventQueue.put(received);
-			clientSeqNum ++;
-			
-		} else {
-			recvdPkts.put(received.sequenceNumber, received);
-		}
-		
-		
-		checkStoredPkt = true;
-		
-		while(checkStoredPkt) {
-			storedPkt = recvdPkts.get(clientSeqNum);
-			
-			if(storedPkt != null) {
-				recvdPkts.remove(clientSeqNum);
-				eventQueue.put(storedPkt);
-				clientSeqNum ++;
-			} else 
-				checkStoredPkt = false;
+				if(received.sequenceNumber == clientSeqNum) { /*If this is the packet that we're expecting from the client then put it in the queue
+				so that it can be stamped with a global Sequence number and broadcast to clients*/
+		                	eventQueue.put(received);
+					clientSeqNum ++;
+					
+				} else {/*Otherwise this packet was not received in the same order that the client received them from the user, so store it
+				until we get the rest of the packets and can put them in the queue in order*/
+					recvdPkts.put(received.sequenceNumber, received);
+				}
+				
+				
+				checkStoredPkt = true; 
+				
+				while(checkStoredPkt) {/*We want to go through the hashmap and check the stored packets for the next packet we're expecting from
+				the client (in terms of clientSeqNum as long as we're finding packets, keep checking*/
+					storedPkt = recvdPkts.get(clientSeqNum);
+					
+					if(storedPkt != null) {
+						recvdPkts.remove(clientSeqNum);
+						eventQueue.put(storedPkt);
+						clientSeqNum ++;
+					} else /*As soon as there is one missing we need to stop checking the HashMap, because we haven't received that packet yet. 
+					We need to wait to receive it from the client.*/
+						checkStoredPkt = false;
 		
 		}
 		
