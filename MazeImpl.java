@@ -484,15 +484,15 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 // Pick a random starting point, and check to see if it is already occupied
                 point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
                 cell = getCellImpl(point);
+                Direction d = Direction.North;
+                
                 // Repeat until we find an empty cell
-                while(cell.getContents() != null) {
+                while(cell.getContents() != null && cell.isWall(d)) {
                         point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
                         cell = getCellImpl(point);
                 }
-                Direction d = Direction.North;//random();
-                //while(cell.isWall(d)) {
-                //         d = Direction.random();
-                //}
+
+                System.out.println("Direction is: " + d);//TODO: REMOVE THIS BEFORE SUBMISSION
                 cell.setContents(target);
                 clientMap.put(target, new DirectedPoint(point, d));
                 update();
