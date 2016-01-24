@@ -74,7 +74,10 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 randomGen = new Random(seed);
                 
                 // Build the maze starting at the corner
-                buildMaze(new Point(0,0));
+                if(seed == 0)
+                	buildEmptyMaze();
+                else
+                	buildMaze(new Point(0,0));
 
                 thread.start();
         }
@@ -878,6 +881,46 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 }
         }
        
+        /**
+         * Build a {@link Maze} with only
+         * the external boundaries.
+         */
+        private void buildEmptyMaze() {
+                //Start from the SW (0,0) corner
+                //iterate until NE(maxX, maxY) and remove all walls
+                //Remove all the interior walls
+                for(int x=1; x < maxX-1; x++){
+                    for(int y=1; y< maxY-1; y++){
+                        Point p = new Point(x,y);
+                        removeWall(p, Direction.North);
+                        removeWall(p, Direction.East);
+                        removeWall(p, Direction.South);
+                        removeWall(p, Direction.West);
+                    }
+                }
+                //Remove all the exterior walls
+                for(int x=1; x<maxX-1; x++){
+                    Point p = new Point(x,0);
+                    removeWall(p, Direction.East);
+                    removeWall(p, Direction.West);
+                    
+                    p = new Point(x, maxY-1);
+                    removeWall(p, Direction.East);
+                    removeWall(p, Direction.West);
+                }
+
+                for(int y=1; y<maxY-1; y++){
+                    Point p = new Point(0,y);
+                    removeWall(p, Direction.North);
+                    removeWall(p, Direction.South);
+                    
+                    p = new Point(maxX-1, y);
+                    removeWall(p, Direction.North);
+                    removeWall(p, Direction.South);
+                }
+                    
+        }
+        
         /** 
          * Obtain the {@link CellImpl} at the specified point. 
          * @param point Location in the {@link Maze}.
