@@ -490,7 +490,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 Direction d = Direction.North;
                 
                 // Repeat until we find an empty cell
-                while(cell.getContents() != null && cell.isWall(d)) {
+                while(cell.getContents() != null || cell.isWall(d)) {
                         point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
                         cell = getCellImpl(point);
                 }
