@@ -59,7 +59,7 @@ public class Mazewar extends JFrame {
          * All implementations of the same protocol must use 
          * the same seed value, or your mazes will be different.
          */
-        private final int mazeSeed = 42;
+        private final int mazeSeed = 0;//42;
 
         /**
          * The {@link Maze} that the game uses.
@@ -150,8 +150,13 @@ public class Mazewar extends JFrame {
                 super("ECE419 Mazewar");
                 consolePrintLn("ECE419 Mazewar started!");
                 
+                
+                //THIS HAS BEEN MOVED!
+                //Initialize queue of events
+                eventQueue = new LinkedBlockingQueue<MPacket>();
+                
                 // Create the maze
-                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
+                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed, eventQueue);
                 assert(maze != null);
                 
                 // Have the ScoreTableModel listen to the maze to find
@@ -179,8 +184,7 @@ public class Mazewar extends JFrame {
                 MPacket resp = (MPacket)mSocket.readObject();
                 if(Debug.debug) System.out.println("Received response from server");
 
-                //Initialize queue of events
-                eventQueue = new LinkedBlockingQueue<MPacket>();
+                
                 //Initialize hash table of clients to client name 
                 clientTable = new Hashtable<String, Client>(); 
                 

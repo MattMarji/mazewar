@@ -71,6 +71,19 @@ public abstract class Maze {
      * @return <code>false</code> on failure, <code>true</code> on success. */
     public abstract boolean clientFire(Client client);
     
+    
+    /** 
+     * Put a respawn event on the eventQueue for this client, because they have died and need to spawn. 
+     * @param client {@link Client} to be added to the {@link Maze}.
+     */
+    public abstract void deadClient(Client client);
+    
+    /** 
+     * Spawn {@link Client} at random location in the {@link Maze}. 
+     * @param client {@link Client} to be added to the {@link Maze}.
+     */
+    public abstract boolean spawnClient(Client toSpawn);
+    
     /** 
      * Remove the specified {@link Client} from the {@link Maze} 
      * @param client {@link Client} to be removed.

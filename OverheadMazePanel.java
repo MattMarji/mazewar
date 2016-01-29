@@ -150,7 +150,6 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
 
                 Font font = new Font("Arial", Font.PLAIN, 9);
                 FontRenderContext frc = g2.getFontRenderContext(); 
-                
                 // Obtain the location of the distinguished client
                 Point cp = maze.getClientPoint(client);
                 
@@ -250,7 +249,8 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
         }
         
         public void clientKilled(Client source, Client target) {
-                // Doesn't need to do anything
+        	System.out.println("entering clientKilled");
+                target.die();// Doesn't need to do anything
         }
         
         public void clientFired(Client c) {

@@ -181,6 +181,33 @@ public abstract class Client {
                 }
         }
         
+        /**
+         * Spawn a client/player after death.
+         * @return <code>true</code> if move was successful, otherwise <code>false</code>.
+         */
+        protected void die() {
+                assert(maze != null);
+                
+                //This is where we're going to need to call a maze fct.
+                maze.deadClient(this);
+              
+        }
+        
+        /**
+         * Spawn a client/player after death.
+         * @return <code>true</code> if move was successful, otherwise <code>false</code>.
+         */
+        protected boolean spawnClient() {
+                assert(maze != null);
+                
+                //This is where we're going to need to call a maze fct.
+                if(maze.spawnClient(this)) {
+                        return true;
+                } else {
+                        return false;
+                }
+        }
+        
         
         /** 
          * Notify listeners that the client moved forward.

@@ -19,6 +19,7 @@ public class MPacket implements Serializable {
     public static final int LEFT = 203;
     public static final int RIGHT = 204;
     public static final int FIRE = 205;
+    public static final int SPAWN = 206;
     
     //These fields characterize the event  
     public int type;
@@ -62,6 +63,8 @@ public class MPacket implements Serializable {
                 typeStr = "ERROR";
                 break;        
         }
+        
+        
         switch(event){
             case 101:
                 eventStr = "HELLO_INIT";
@@ -84,6 +87,10 @@ public class MPacket implements Serializable {
             case 205:
                 eventStr = "FIRE";
                 break;
+            case 206:
+            	eventStr = "SPAWN";
+            	break;
+            	
             default:
                 eventStr = "ERROR";
                 break;        

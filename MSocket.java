@@ -80,11 +80,11 @@ public class MSocket{
             try{
                 
                 Object incoming = in.readObject();
-                if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
-                if(Debug.debug) System.out.println("Received packet: " + incoming);
+                //if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
+                //if(Debug.debug) System.out.println("Received packet: " + incoming);
                 while(incoming != null){
-                    if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
-                    if(Debug.debug) System.out.println("Received packet: " + incoming);
+//                    if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
+//                    if(Debug.debug) System.out.println("Received packet: " + incoming);
                     ingressQueue.put(incoming);
                     incoming = in.readObject();
                 }
