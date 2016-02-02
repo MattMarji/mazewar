@@ -68,6 +68,8 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
                         mazeVector.insertElementAt(colVector, i);
                 }
 
+               // thread = new Thread(this);
+
                 // Initialized the random number generator
                 randomGen = new Random(seed);
                 
@@ -76,6 +78,8 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
                 	buildEmptyMaze();
                 else
                 	buildMaze(new Point(0,0));
+
+               // thread.start();
         }
        
         /** 
@@ -327,8 +331,6 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
                 return moveClient(client, dp.getDirection().invert());
         }
         
-        
-        // Reuse the code in the previous run() method.
         public void syncBullets() {
             Collection deadPrj = new HashSet();
             if(!projectileMap.isEmpty()) {
@@ -379,7 +381,40 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
                         rotateClientRight(c);
                 }
         }
-        
+
+        /**
+         * Control loop for {@link Projectile}s.
+         
+        public void run() {
+                Collection deadPrj = new HashSet();
+                while(true) {
+                        if(!projectileMap.isEmpty()) {
+                                Iterator it = projectileMap.keySet().iterator();
+                                synchronized(projectileMap) {
+                                        while(it.hasNext()) {   
+                                                Object o = it.next();
+                                                assert(o instanceof Projectile);
+                                                deadPrj.addAll(moveProjectile((Projectile)o));
+                                        }               
+                                        it = deadPrj.iterator();
+                                        while(it.hasNext()) {
+                                                Object o = it.next();
+                                                assert(o instanceof Projectile);
+                                                Projectile prj = (Projectile)o;
+                                                projectileMap.remove(prj);
+                                                clientFired.remove(prj.getOwner());
+                                        }
+                                        deadPrj.clear();
+                                }
+                        }
+                        try {
+                                thread.sleep(200);
+                        } catch(Exception e) {
+                                // shouldn't happen
+                        }
+                }
+        }
+        */
         /* Internals */
         
         private synchronized Collection moveProjectile(Projectile prj) {
@@ -602,6 +637,11 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
          */
         private final Set clientFired = new HashSet();
        
+        /**
+         * The thread used to manage {@link Projectile}s.
+         */
+        //private final Thread thread;
+        
         /**
          * Generate a notification to listeners that a
          * {@link Client} has been added.

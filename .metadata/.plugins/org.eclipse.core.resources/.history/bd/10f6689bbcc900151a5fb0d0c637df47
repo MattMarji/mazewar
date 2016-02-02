@@ -68,6 +68,8 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
                         mazeVector.insertElementAt(colVector, i);
                 }
 
+               // thread = new Thread(this);
+
                 // Initialized the random number generator
                 randomGen = new Random(seed);
                 
@@ -76,6 +78,8 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
                 	buildEmptyMaze();
                 else
                 	buildMaze(new Point(0,0));
+
+               // thread.start();
         }
        
         /** 
@@ -602,6 +606,11 @@ public class MazeImpl extends Maze implements Serializable, ClientListener {
          */
         private final Set clientFired = new HashSet();
        
+        /**
+         * The thread used to manage {@link Projectile}s.
+         */
+        //private final Thread thread;
+        
         /**
          * Generate a notification to listeners that a
          * {@link Client} has been added.
