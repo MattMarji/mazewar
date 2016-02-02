@@ -1,0 +1,6 @@
+import java.lang.Thread;
+import java.util.concurrent.BlockingQueue;
+
+public class SynchronizeProjectileThread implements  {
+
+}
