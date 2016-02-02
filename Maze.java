@@ -82,7 +82,7 @@ public abstract class Maze {
      * Spawn {@link Client} at random location in the {@link Maze}. 
      * @param client {@link Client} to be added to the {@link Maze}.
      */
-    public abstract boolean spawnClient(Client toSpawn);
+    public abstract boolean spawnClient(Client toSpawn, Integer spawnSeqNum);
     
     /** 
      * Remove the specified {@link Client} from the {@link Maze} 

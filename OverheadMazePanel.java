@@ -249,8 +249,8 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
         }
         
         public void clientKilled(Client source, Client target) {
-        	System.out.println("entering clientKilled");
-                target.die();// Doesn't need to do anything
+//        	System.out.println("entering clientKilled");
+//                target.die();// Doesn't need to do anything
         }
         
         public void clientFired(Client c) {

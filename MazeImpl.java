@@ -46,6 +46,7 @@ import java.util.concurrent.BlockingQueue;
 public class MazeImpl extends Maze implements Serializable, ClientListener, Runnable {
 	
 		private BlockingQueue<MPacket> eventQueue = null;
+		private Integer spawnNum = 0;
 
         /**
          * Create a {@link Maze}.
@@ -330,7 +331,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 }
                 
                 DirectedPoint newPoint = new DirectedPoint(point.move(d), d);
-                /* Is the point withint the bounds of maze? */
+                /* Is the point within the bounds of maze? */
                 assert(checkBounds(newPoint));
                 
                 CellImpl newCell = getCellImpl(newPoint);
@@ -339,8 +340,11 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                         // If it is a Client, kill it outright
                         if(contents instanceof Client) {
                                 notifyClientFired(client);
-                                System.out.println(client.getName() + " calling killClient from clientFire ");
+                                System.out.println(client.getName() + " calling killClient from clientFire ------------------------------------------------------------------");
                                 killClient(client, (Client)contents);
+                                newCell.setContents(null);//TODO: I ADDED THIS HERE AND WE SHOULD DISCUSS
+                                System.out.println("Client arg is: " + client.getName() + " Client got shot is: " + ((Client)contents).getName());
+                        		deadClient((Client)contents);
                                 update();
                                 return true; 
                         } else {
@@ -463,14 +467,19 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 /* Is the point within the bounds of maze? */
                 assert(checkBounds(newPoint));
                 
+                //System.out.println("The new point for the projectile is: " +newPoint.getX()+ "," +newPoint.getY());
+                
                 CellImpl newCell = getCellImpl(newPoint);
                 Object contents = newCell.getContents();
                 if(contents != null) {
                         // If it is a Client, kill it outright
                         if(contents instanceof Client) {
-                        		System.out.println(prj.getOwner().getName() + " calling killClient from moveProjectile " );
+                        		System.out.println(prj.getOwner().getName() + " calling killClient from moveProjectile ------------------------------------------------------------------" );
                                 killClient(prj.getOwner(), (Client)contents);
+                                System.out.println("Client arg is: " + prj.getOwner() + " Client got shot is: " + ((Client)contents).getName());
+                                deadClient((Client)contents);
                                 cell.setContents(null);
+                                newCell.setContents(null);//TODO: I ADDED THIS HERE AND WE SHOULD DISCUSS
                                 deadPrj.add(prj);
                                 update();
                                 return deadPrj;
@@ -524,33 +533,9 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 assert(source != null);
                 assert(target != null);
                 Mazewar.consolePrintLn(source.getName() + " just vaporized " + 
-                                target.getName());
-                /*Object o = clientMap.remove(target);
-                assert(o instanceof Point);
-                Point point = (Point)o;
-                CellImpl cell = getCellImpl(point);
-                cell.setContents(null);
-                System.out.println("Client " + target.getName() + " has been killed and is about to be removed from the map");
-              
-                
-                /// Pick a random starting point, and check to see if it is already occupied
-                point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
-                cell = getCellImpl(point);
-                Direction d = Direction.North;
-                
-                // Repeat until we find an empty cell
-                while(cell.getContents() != null || cell.isWall(d)) {
-                        point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
-                        cell = getCellImpl(point);
-                }
-
-                System.out.println("DIRECTION is: " + d + "----------------------------------------------------------------");//TODO: REMOVE THIS BEFORE SUBMISSION
-                cell.setContents(target);
-                clientMap.put(target, new DirectedPoint(point, d));
-                update();*/
-                
+                      target.getName());
                 notifyClientKilled(source, target);
-                deadClient(target);
+                //deadClient(target);
         }
         
         
@@ -560,15 +545,27 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 		 * @param dead The {@link Client} that died the projectile.
 		 * @param target The {@link Client} that was killed.
 		 */
-        public synchronized void deadClient(Client dead) {
+        public synchronized void deadClient(Client dead){ //Need to make sure that this only happens the one time to avoid double spawn
             assert(dead != null);
-            System.out.println("entering deadClient");
-	          try {
-	        	  	System.out.println("WATCH YOSELF CLIENT " + dead.getName() + "is putting a spawn packet in the event queue");
+            
+            Object o = null;
+            MazeListener ml = null;
+            Set<Client> clients = null;
+            
+            clients = this.clientMap.keySet();
+            Class test = dead.getClass();
+            
+            if(test.getName() == "GUIClient") {//This means that only one of the clients will actually send the spawn packet, this is exactly what we want.
+            	System.out.println("Test");
+            	try {
+	        	  	System.out.println("WATCH YOSELF CLIENT " + dead.getName() + " is putting a spawn packet in the event queue");
 	        	  	eventQueue.put(new MPacket(dead.getName(), MPacket.ACTION, MPacket.SPAWN));
-			} catch (InterruptedException e) {
+            	} catch (InterruptedException e) {
 					e.printStackTrace();
-			}
+            	}
+            }
+            
+	          
 	    }
         
         /**
@@ -578,14 +575,23 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
          */
         
         //TODO: This is where the work actually needs to be done. In theory we only really need to do the last couple of lines as well as finding a random cell.
-        public synchronized boolean spawnClient(Client toSpawn) {
+        public synchronized boolean spawnClient(Client toSpawn, Integer spawnSeqNum) {
                 assert(toSpawn != null);
-                System.out.println("entering spawnClient");
+                
+                spawnNum = (spawnNum == 0) ? spawnSeqNum : spawnNum;
+                
+                //TODO: REMOVE THIS: This is a terrible way of doing things, it was just here as an intermediate solution. 
+                if(spawnSeqNum == (spawnNum + 1) ) {
+                	System.out.println("The previous packet was also a spawn! Can't have 2 back-to-back spawns " + spawnSeqNum);
+                	return true;
+                }
+                
+                spawnNum = spawnSeqNum;//Update this so it reflects the most recent spawn packet.
                 Object o = clientMap.remove(toSpawn);
                 assert(o instanceof Point);
                 Point point = (Point)o;
                 CellImpl cell = getCellImpl(point);
-                cell.setContents(null);
+                //cell.setContents(null);
                 
                 // Pick a random starting point, and check to see if it is already occupied
                 point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
@@ -598,11 +604,9 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                         cell = getCellImpl(point);
                 }
 
-                System.out.println("DIRECTION is: " + d + "----------------------------------------------------------------");//TODO: REMOVE THIS BEFORE SUBMISSION
                 cell.setContents(toSpawn);
                 clientMap.put(toSpawn, new DirectedPoint(point, d));
                 update();
-//                notifyClientKilled(source, target);
                 return true; //This is just a placeholder for now!
         }
         
@@ -781,13 +785,13 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         private void notifyClientKilled(Client source, Client target) {
                 assert(source != null);
                 assert(target != null);
+                System.out.println("starting notifyClientKilled " + source + " killed " + target);
                 Iterator i = listenerSet.iterator();
                 while (i.hasNext()) {
                         Object o = i.next();
                         assert(o instanceof MazeListener);
                         MazeListener ml = (MazeListener)o;
-                        if(o.equals(target))
-                        	ml.clientKilled(source, target);
+                    	ml.clientKilled(source, target);
                 }
         }
         

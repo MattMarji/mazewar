@@ -74,7 +74,6 @@ public class ScoreTableModel implements TableModel, MazeListener {
                 }
 
                 public void adjustScore(int mod) {
-                		System.out.println("adjusting score by: " + mod);
                         score = score + mod;
                 }
                 

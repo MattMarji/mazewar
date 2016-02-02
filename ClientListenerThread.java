@@ -39,8 +39,8 @@ public class ClientListenerThread implements Runnable {
                 // CASE 1: Received Seq # EQUAL Global Seq #
                 if (received.sequenceNumber == globalSeqNum) {
                 	System.out.println("DEBUG: MATCHED SEQ NUMBER: " + globalSeqNum);
+                	executeEvent(client, received.event, globalSeqNum);
                 	globalSeqNum++;
-                	executeEvent(client, received.event);
                 }
                 
                 else {
@@ -56,7 +56,7 @@ public class ClientListenerThread implements Runnable {
                 	System.out.println("DEBUG: FOUND GLOBAL SEQ NUM: " + globalSeqNum);
                 	MPacket pkt = pktArr[(globalSeqNum)%ARRAY_SIZE];
                 	client = clientTable.get(pkt.name);
-                	executeEvent(client, pkt.event);
+                	executeEvent(client, pkt.event, globalSeqNum);
                 	pktArr[(globalSeqNum)%ARRAY_SIZE] = null;
                 	globalSeqNum++;
                 }
@@ -70,13 +70,13 @@ public class ClientListenerThread implements Runnable {
         }
     }
     
-    private void executeEvent (Client client, int event) throws UnsupportedOperationException {
+    private void executeEvent (Client client, int event, int seqNum) throws UnsupportedOperationException {
     	
     	if(Debug.debug) System.out.println("Client: " +client.getName() + " Starting executeEvent");
     	
     	if(event == MPacket.SPAWN) {//This is where we want to deal with a death.
-    		if(Debug.debug) System.out.println("client: " +client.getName() + " executeEvent SPAWN");
-    		client.spawnClient();
+    		if(Debug.debug) System.out.println("client: " +client.getName() + " executeEvent SPAWN sequence number is: " + seqNum);
+    		client.spawnClient(seqNum);
     	}else if(event == MPacket.UP){
             client.forward();
             if(Debug.debug) System.out.println("client: " +client.getName() + " executeEvent UP");

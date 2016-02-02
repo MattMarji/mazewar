@@ -189,7 +189,7 @@ public abstract class Client {
                 assert(maze != null);
                 
                 //This is where we're going to need to call a maze fct.
-                maze.deadClient(this);
+//                maze.deadClient(this);
               
         }
         
@@ -197,11 +197,11 @@ public abstract class Client {
          * Spawn a client/player after death.
          * @return <code>true</code> if move was successful, otherwise <code>false</code>.
          */
-        protected boolean spawnClient() {
+        protected boolean spawnClient(Integer seqNum) {
                 assert(maze != null);
                 
                 //This is where we're going to need to call a maze fct.
-                if(maze.spawnClient(this)) {
+                if(maze.spawnClient(this, seqNum)) {
                         return true;
                 } else {
                         return false;
