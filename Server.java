@@ -1,4 +1,7 @@
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -7,9 +10,10 @@ public class Server {
 	//The maximum of clients that will join
 	//Server waits until the max number of clients to join 
     private static final int MAX_CLIENTS = 2;
-    private MServerSocket mServerSocket = null;
+    private ServerSocket serverSocket = null;
     private int clientCount; //The number of clients before game starts
-    private MSocket[] mSocketList = null; //A list of MSockets
+    private List<Socket> socketList = null; //A list of MSockets
+    private List<String> clientList = null;
     private BlockingQueue eventQueue = null; //A list of events
     
     /*
@@ -17,9 +21,10 @@ public class Server {
     */
     public Server(int port) throws IOException{
         clientCount = 0; 
-        mServerSocket = new MServerSocket(port);
+        serverSocket = new ServerSocket(port);
         if(Debug.debug) System.out.println("Listening on port: " + port);
-        mSocketList = new MSocket[MAX_CLIENTS];
+        socketList = null;
+        clientList = null;
         eventQueue = new LinkedBlockingQueue<MPacket>();
     }
     
@@ -27,20 +32,47 @@ public class Server {
     *Starts the listener and sender threads 
     */
     public void startThreads() throws IOException{
-        //Listen for new clients
-        while(clientCount < MAX_CLIENTS){
+        //Listen for new clients always to support dynamic joins.
+        while(true){
             //Start a new listener thread for each new client connection
-            MSocket mSocket = mServerSocket.accept();
+            Socket socket = serverSocket.accept();
             
-            new Thread(new ServerListenerThread(mSocket, eventQueue)).start();
+            MPacket received = null;
             
-            mSocketList[clientCount] = mSocket;                            
+			try {
+				//Need to sort this out.
+				received = (MPacket) socket.readObject();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
             
-            clientCount++;
+            if(Debug.debug) System.out.println("Received: " + received);
+            
+            String incomingName = received.name;
+            
+            if(clientList.contains(incomingName)) {
+            //Check that there isn't already a client with this name in our game, because all clients need to have unique names.
+
+            	System.out.println("A client with the name: " + incomingName + " already exists. Please select another name.");
+            } else {
+                clientList.add(incomingName);
+                clientCount++;
+            	System.out.println("Client: " + incomingName + " added to the game, there are now " + clientCount + " clients.");
+            	socketList.add(socket);
+            	//Here we need to broadcast the client list to everyone. 
+            	for (Socket sock : socketList) {
+            		//Need to sort this out.
+            		socket.writeObject(clientList);
+            	}
+            }
+            
+            //new Thread(new ServerListenerThread(mSocket, eventQueue)).start();
+
         }
         
         //Start a new sender thread 
-        new Thread(new ServerSenderThread(mSocketList, eventQueue)).start();    
+        //new Thread(new ServerSenderThread(mSocketList, eventQueue)).start();    
     }
 
         
