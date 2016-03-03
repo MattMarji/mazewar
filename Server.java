@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -15,6 +17,9 @@ public class Server {
     private List<Socket> socketList = null; //A list of MSockets
     private List<String> clientList = null;
     private BlockingQueue eventQueue = null; //A list of events
+    private Socket socket = null; 
+    private ObjectInputStream in = null;
+    private ObjectOutputStream out = null;
     
     /*
     * Constructor
@@ -32,16 +37,23 @@ public class Server {
     *Starts the listener and sender threads 
     */
     public void startThreads() throws IOException{
+    	
+    	socket = serverSocket.accept();
+        
+        in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
+    	
         //Listen for new clients always to support dynamic joins.
         while(true){
             //Start a new listener thread for each new client connection
-            Socket socket = serverSocket.accept();
+            
             
             MPacket received = null;
             
 			try {
-				//Need to sort this out.
-				received = (MPacket) socket.readObject();
+				received = (MPacket) in.readObject();
+				//so we've now pulled the incoming data from the socket and stream, we need to store it in the ingress queue. 
+				
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -62,17 +74,20 @@ public class Server {
             	socketList.add(socket);
             	//Here we need to broadcast the client list to everyone. 
             	for (Socket sock : socketList) {
-            		//Need to sort this out.
-            		socket.writeObject(clientList);
+            		socket.(clientList);
             	}
             }
             
-            //new Thread(new ServerListenerThread(mSocket, eventQueue)).start();
-
+            
+            new Thread(new ServerListenerThread(mSocket, eventQueue)).start();
+            
+                                        
+            
+            
         }
         
         //Start a new sender thread 
-        //new Thread(new ServerSenderThread(mSocketList, eventQueue)).start();    
+        new Thread(new ServerSenderThread(mSocketList, eventQueue)).start();    
     }
 
         
