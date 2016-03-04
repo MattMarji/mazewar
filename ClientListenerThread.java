@@ -16,13 +16,16 @@ public class ClientListenerThread implements Runnable {
     private Hashtable<String, Client> clientTable = null;
     private Integer globalSeqNum = 0;
     private	MPacket[] pktArr = null; 
+    private Maze maze;
     
     
     public ClientListenerThread( MSocket mSocket,
-                                Hashtable<String, Client> clientTable){
+                                Hashtable<String, Client> clientTable, Maze maze){
         this.mSocket = mSocket;
         this.clientTable = clientTable;
         this.pktArr = new MPacket[ARRAY_SIZE];
+        this.maze = maze;
+        
         if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
     }
 
@@ -35,6 +38,11 @@ public class ClientListenerThread implements Runnable {
                 received = (MPacket) mSocket.readObject();
                 System.out.println("Received " + received + "Received Type: " + received.event);
                 client = clientTable.get(received.name);
+                
+                // Sync Missile Ticks right away.
+                if(received.event == MPacket.MISSILE_TICK) {
+                	maze.syncBullets();
+                }
                 
                 // CASE 1: Received Seq # EQUAL Global Seq #
                 if (received.sequenceNumber == globalSeqNum) {
@@ -71,8 +79,6 @@ public class ClientListenerThread implements Runnable {
     }
     
     private void executeEvent (Client client, int event) throws UnsupportedOperationException {
-    	
-    	if(Debug.debug) System.out.println("Client: " +client.getName() + " Starting executeEvent");
     	
     	if(event == MPacket.UP){
             client.forward();

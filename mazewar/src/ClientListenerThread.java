@@ -39,6 +39,11 @@ public class ClientListenerThread implements Runnable {
                 System.out.println("Received " + received + "Received Type: " + received.event);
                 client = clientTable.get(received.name);
                 
+                // Sync Missile Ticks right away.
+                if(received.event == MPacket.MISSILE_TICK) {
+                	maze.syncBullets();
+                }
+                
                 // CASE 1: Received Seq # EQUAL Global Seq #
                 if (received.sequenceNumber == globalSeqNum) {
                 	System.out.println("DEBUG: MATCHING SEQ NUMBERS!");
@@ -90,8 +95,6 @@ public class ClientListenerThread implements Runnable {
         }else if(event == MPacket.FIRE){
             client.fire();
             if(Debug.debug) System.out.println("client: " +client.getName() + " executeEvent FIRE");
-        }else if(event == MPacket.BULLET) {
-        	maze.syncBullets();
         }else{
             throw new UnsupportedOperationException();
         }

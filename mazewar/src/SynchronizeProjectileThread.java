@@ -14,7 +14,7 @@ public class SynchronizeProjectileThread implements Runnable  {
 	public void run() {
 		while(true){
             try{
-                eventQueue.put(new MPacket("SYNC", MPacket.ACTION, MPacket.BULLET));
+                eventQueue.put(new MPacket("SYNC", MPacket.ACTION, MPacket.MISSILE_TICK));
                 Thread.currentThread().sleep(200);
             }catch(Exception e){
             }
