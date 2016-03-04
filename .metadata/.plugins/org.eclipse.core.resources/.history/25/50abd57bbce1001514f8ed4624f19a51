@@ -42,33 +42,34 @@ public class ClientListenerThread implements Runnable {
                 // Sync Missile Ticks right away.
                 if(received.event == MPacket.MISSILE_TICK) {
                 	maze.syncBullets();
-                } else {
-	                // CASE 1: Received Seq # EQUAL Global Seq #
-	                if (received.sequenceNumber == globalSeqNum) {
-	                	System.out.println("DEBUG: MATCHING SEQ NUMBERS!");
-	                	globalSeqNum++;
-	                	executeEvent(client, received.event);
-	                }
-	                
-	                else {
-	                	// CASE 2: Not a match, store in buffer...
-	                    System.out.println("DEBUG: NOT A MATCH!");
-	                    System.out.println("DEBUG: REC SEQ #: " + received.sequenceNumber  + " GLOBAL SEQ #: " + globalSeqNum);
-	                    
-	                    pktArr[(received.sequenceNumber)%ARRAY_SIZE] = received;
-	                }
-	
-	                // if we find the next sequence number in the queue, lets process it.
-	                while (pktArr[(globalSeqNum)%ARRAY_SIZE] != null) {
-	                	System.out.println("DEBUG: FOUND GLOBAL SEQ NUM: " + globalSeqNum);
-	                	MPacket pkt = pktArr[(globalSeqNum)%ARRAY_SIZE];
-	                	client = clientTable.get(pkt.name);
-	                	executeEvent(client, pkt.event);
-	                	pktArr[(globalSeqNum)%ARRAY_SIZE] = null;
-	                	globalSeqNum++;
-	                }
+                }
+                
+                // CASE 1: Received Seq # EQUAL Global Seq #
+                if (received.sequenceNumber == globalSeqNum) {
+                	System.out.println("DEBUG: MATCHING SEQ NUMBERS!");
+                	globalSeqNum++;
+                	executeEvent(client, received.event);
+                }
+                
+                else {
+                	// CASE 2: Not a match, store in buffer...
+                    System.out.println("DEBUG: NOT A MATCH!");
+                    System.out.println("DEBUG: REC SEQ #: " + received.sequenceNumber  + " GLOBAL SEQ #: " + globalSeqNum);
+                    
+                    pktArr[(received.sequenceNumber)%ARRAY_SIZE] = received;
+                }
 
-                }    
+                // if we find the next sequence number in the queue, lets process it.
+                while (pktArr[(globalSeqNum)%ARRAY_SIZE] != null) {
+                	System.out.println("DEBUG: FOUND GLOBAL SEQ NUM: " + globalSeqNum);
+                	MPacket pkt = pktArr[(globalSeqNum)%ARRAY_SIZE];
+                	client = clientTable.get(pkt.name);
+                	executeEvent(client, pkt.event);
+                	pktArr[(globalSeqNum)%ARRAY_SIZE] = null;
+                	globalSeqNum++;
+                }
+
+                   
             }catch(IOException e){
                 Thread.currentThread().interrupt();    
             }catch(ClassNotFoundException e){
