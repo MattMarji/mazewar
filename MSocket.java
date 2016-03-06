@@ -8,7 +8,7 @@ import java.io.ObjectInputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService; 
+import java.util.concurrent.ExecutorService;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Collections;
@@ -21,28 +21,28 @@ public class MSocket{
      */
 
     /*************Constants*************/
-    //DELAY_WEIGHT, DELAY_THRESHOLD determine the distribution 
+    //DELAY_WEIGHT, DELAY_THRESHOLD determine the distribution
     //of the delays
 
     //The weight associated with the delay
-    //this roughly corresponds with the mean delay in  
+    //this roughly corresponds with the mean delay in
     //milliseconds, when the delay is non-zero
-    //This should be a value between [0, inf), with 
+    //This should be a value between [0, inf), with
     // 1000 being a good value
     //To disable delays, set to 0.0
     public final double DELAY_WEIGHT = 100.0;
-    
-    //This roughly corresponds to the likelihood 
+
+    //This roughly corresponds to the likelihood
     //of any delay. This should be a value between (-inf, inf)
-    //A higher value corresponds to a lower likelihood 
+    //A higher value corresponds to a lower likelihood
     //for delay
     public final double DELAY_THRESHOLD = 0.0;
-    
+
     //The degree of packet reordereding caused by the network
     //value should be [0, 1]
     //0 means ordered
-    public final double UNORDER_FACTOR = 1.0; 
-    
+    public final double UNORDER_FACTOR = 1.0;
+
     //To disable all network errors set:
     //DELAY_WEIGHT = 0, DELAY_THRESHOLD = 0, UNORDER_FACTOR = 0
     //To induced a large degree of network errors set:
@@ -52,7 +52,7 @@ public class MSocket{
     private Socket socket = null;
     private ObjectInputStream in = null;
     private ObjectOutputStream out = null;
-    
+
     /*************Member objects for other tasks*************/
     //For adding errors, like delays and packet reorders
     private Random random = null;
@@ -61,13 +61,13 @@ public class MSocket{
     private BlockingQueue egressQueue = null;
     //The queue of packets received
     private BlockingQueue ingressQueue = null;
-    
+
     private ExecutorService executor = null;
-    
+
     //Counters for number packets sent or received
     private int rcvdCount;
     private int sentCount;
-    
+
 
     /*************Helper Classes*************/
     /*
@@ -75,10 +75,10 @@ public class MSocket{
      *receives packets and adds it to the ingressQueue
      */
      class Receiver implements Runnable{
-     
+
         public void run(){
             try{
-                
+
                 Object incoming = in.readObject();
                 if(Debug.debug) System.out.println("Number of packets received: " + ++rcvdCount);
                 if(Debug.debug) System.out.println("Received packet: " + incoming);
@@ -106,17 +106,17 @@ public class MSocket{
             }
         }
      }
-    
+
     /*
-     *The following inner class sends packets by reordering them 
-     and adding a delay. 
-     There are two ways to do this: 1) when a thread wakes up, it 
+     *The following inner class sends packets by reordering them
+     and adding a delay.
+     There are two ways to do this: 1) when a thread wakes up, it
      sends ALL packets in an order determined by UNORDER_FACTOR;
-     2) when a thread wakes up it sends ONE packet based on UNORDER_FACTOR. 
-     This implementation uses the former. 
+     2) when a thread wakes up it sends ONE packet based on UNORDER_FACTOR.
+     This implementation uses the former.
     */
     class NetworkErrorSender implements Runnable{
-        
+
         public void run(){
             try{
                 int delay = getDelay();
@@ -126,12 +126,12 @@ public class MSocket{
                 //Drain the entire egress queue into the events list
                 Object head = egressQueue.poll();
                 while(head != null){
-                    events.add(head);    
+                    events.add(head);
                     head = egressQueue.poll();
                 }
-                
+
                 //Now reorder the events based on the UNORDER_FACTOR
-                if(UNORDER_FACTOR == 0.0){ 
+                if(UNORDER_FACTOR == 0.0){
                     //no reordering
                 }else if(UNORDER_FACTOR > 0.0 && UNORDER_FACTOR < 1.0){
                     //swap first two elements, if there are at least 2 elements
@@ -176,17 +176,17 @@ public class MSocket{
         //inputStream, otherwise it will block
         out = new ObjectOutputStream(socket.getOutputStream());
         in = new ObjectInputStream(socket.getInputStream());
-        
+
         egressQueue = new LinkedBlockingQueue<Object>();
         ingressQueue = new LinkedBlockingQueue<Object>();
         random = new Random(/*seed*/);
-        
+
         //Start the receiver thread
         //NOTE: This will keep updating the ingress queue
         (new Thread(new Receiver())).start();
-        
+
         executor = Executors.newFixedThreadPool(10);
-        
+
         rcvdCount = 0;
         sentCount = 0;
     }
@@ -198,56 +198,56 @@ public class MSocket{
 
         out = new ObjectOutputStream(socket.getOutputStream());
         in = new ObjectInputStream(socket.getInputStream());
-        
+
         egressQueue = new LinkedBlockingQueue<Object>();
         ingressQueue = new LinkedBlockingQueue<Object>();
         random = new Random(/*seed*/);
-        
+
         (new Thread(new Receiver())).start();
-        
+
         executor = Executors.newFixedThreadPool(10);
-        
+
         rcvdCount = 0;
         sentCount = 0;
     }
-    
+
 
     /*************Helpers*************/
-    
-    //Generate a quasi-gaussian random delay 
-    private int getDelay(){    
+
+    //Generate a quasi-gaussian random delay
+    private int getDelay(){
         double randGauss = random.nextGaussian();
         double delay = randGauss > DELAY_THRESHOLD ? randGauss * DELAY_WEIGHT : 0.0;
         return (int)delay;
     }
-    
-    //Get a random index 
+
+    //Get a random index
     private int getRandomIndex(int size){
-        return random.nextInt(size);    
+        return random.nextInt(size);
     }
-    
+
     /*************Public Methods*************/
-    
+
     /*
      Read incoming packet and induce network delays and packet
-     reordering. 
-     NOTE: This method relies on the 
+     reordering.
+     NOTE: This method relies on the
      ingress queue being automatically updated by another thread
     */
     public synchronized Object readObject() throws IOException, ClassNotFoundException{
 
         //The packet to be returned
-        Object incoming = null; 
-        
+        Object incoming = null;
+
         try{
             //Add a random delay
             int delay = getDelay();
             Thread.sleep(delay);
-        
+
             //Return the head of the queue- no reordering
             if(UNORDER_FACTOR == 0.0 || ingressQueue.size() < 2){
                 incoming = ingressQueue.take();
-            //Return the second object in the queue- slight reordering   
+            //Return the second object in the queue- slight reordering
             }else if(UNORDER_FACTOR > 0.0 && UNORDER_FACTOR < 1.0){
                 Object first = ingressQueue.take();
                 //Take the second element
@@ -274,16 +274,16 @@ public class MSocket{
 
     //Writes the object, while adding delay and unordering the packets
     public void writeObject(Object o) {
-        try{ 
+        try{
             //Place packet in the queue, and later change the order of packets sent
             egressQueue.put(o);
         }catch(InterruptedException e){
             e.printStackTrace();
         }
-        
+
         executor.submit(new NetworkErrorSender());
     }
-    
+
 
     //This method is for reference and testing
     //it reads objects without inducing network errors
@@ -309,7 +309,7 @@ public class MSocket{
         }
     }
 
-    //Closes network objects, i.e. sockets, InputObjectStreams, 
+    //Closes network objects, i.e. sockets, InputObjectStreams,
     // OutputObjectStream
     public void close() {
         try{

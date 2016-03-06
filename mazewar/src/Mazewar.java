@@ -32,6 +32,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.Socket;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -71,8 +72,6 @@ public class Mazewar extends JFrame {
          */
         private Mazewar mazewar = null;
         private MSocket mSocket = null;
-        private ObjectOutputStream out = null;
-        private ObjectInputStream in = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -100,6 +99,14 @@ public class Mazewar extends JFrame {
          */
         private JTable scoreTable = null;
         
+        /*These are the variables we've added for the new socket etc.
+         */
+        private Socket socket = null;
+        private ObjectOutputStream out = null;
+        private ObjectInputStream in = null;
+        private List<Player> playerList = null; 
+         
+
         /** 
          * Create the textpane statically so that we can 
          * write to it globally using
@@ -150,6 +157,11 @@ public class Mazewar extends JFrame {
                 super("ECE419 Mazewar");
                 consolePrintLn("ECE419 Mazewar started!");
                 
+                
+                //THIS HAS BEEN MOVED!
+                //Initialize queue of events
+                eventQueue = new LinkedBlockingQueue<MPacket>();
+                
                 // Create the maze
                 maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
                 assert(maze != null);
@@ -166,27 +178,31 @@ public class Mazewar extends JFrame {
                   Mazewar.quit();
                 }
                 
-                mSocket = new MSocket(serverHost, serverPort);
+                this.socket = new Socket(serverHost, serverPort);
+                this.out = new ObjectOutputStream(socket.getOutputStream());
+                
                 //Send hello packet to server
                 MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT);
                 hello.mazeWidth = mazeWidth;
                 hello.mazeHeight = mazeHeight;
                 
                 if(Debug.debug) System.out.println("Sending hello");
-                mSocket.writeObject(hello);
+                out.writeObject(hello);
                 if(Debug.debug) System.out.println("hello sent");
-                //Receive response from server
-                MPacket resp = (MPacket)mSocket.readObject();
+                
+                this.in = new ObjectInputStream(socket.getInputStream());
+                //This should be our client list. We need to establish connections to everyone in this list before proceeding.
+                MPacket response = (MPacket) in.readObject();
                 if(Debug.debug) System.out.println("Received response from server");
 
-                //Initialize queue of events
-                eventQueue = new LinkedBlockingQueue<MPacket>();
+                this.playerList = response.players;
+
                 //Initialize hash table of clients to client name 
                 clientTable = new Hashtable<String, Client>(); 
                 
                 // Create the GUIClient and connect it to the KeyListener queue
                 //RemoteClient remoteClient = null;
-                for(Player player: resp.players){  
+                for(Player player: response.players){  
                         if(player.name.equals(name)){
                         	if(Debug.debug)System.out.println("Adding guiClient: " + player);
                                 guiClient = new GUIClient(name, eventQueue);
@@ -279,10 +295,43 @@ public class Mazewar extends JFrame {
          listening for events
         */
         private void startThreads(){
-                //Start a new sender thread 
-                new Thread(new ClientSenderThread(mSocket, eventQueue)).start();
-                //Start a new listener thread 
-                new Thread(new ClientListenerThread(mSocket, clientTable, maze)).start();    
+        	
+        	//Start a new sender thread for each client 
+            new Thread(new ClientSenderThread(out, eventQueue)).start();
+            
+            // Start a new listener thread for the central naming server
+            new Thread(new ClientListenerThread(in,
+                    clientTable, maze, playerList)).start();
+        	
+        	for(Player player : playerList) {
+                //Start a new listener thread for each client
+                new Thread(new ClientEventListenerThread(player.mSocket, clientTable, maze, playerList)).start();    
+        	}
+        }
+        
+        public void connectToPeers(MPacket pkt) {
+        	if(pkt.event == MPacket.HELLO_RESP){
+        		playerList = pkt.players;
+	        	ObjectOutputStream out = null;
+	        	ObjectInputStream in = null;
+	        	
+	        	for(Player player : playerList) {
+	        		try {
+	        			// Connect to each client 
+	        			//TODO - CONNECT TO EACH CLIENT ON A RANDOM PORT
+						player.mSocket = new MSocket(player.ip, player.port);
+						//player.out = out = new ObjectOutputStream(player.mSocket.getOutputStream());
+		        		//player.in = in = new ObjectInputStream(player.mSocket.getInputStream());	
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	        		
+	        	}
+	        } else {
+	        	//print some error that we didn't get a hello response from the server.
+	        	return;
+	        }
         }
 
         

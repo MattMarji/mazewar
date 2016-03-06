@@ -1,4 +1,10 @@
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -7,40 +13,43 @@ public class Server {
 	//The maximum of clients that will join
 	//Server waits until the max number of clients to join 
     private static final int MAX_CLIENTS = 2;
-    private MServerSocket mServerSocket = null;
-    private int clientCount; //The number of clients before game starts
-    private MSocket[] mSocketList = null; //A list of MSockets
+    private ServerSocket serverSocket = null;
     private BlockingQueue eventQueue = null; //A list of events
+    private Socket socket = null; 
+    private List<ObjectOutputStream> out = null;
+    private int clientCount; //The number of clients before game starts
+    private List<Socket> socketList = null; //A list of MSockets
+    private List<String> clientList = null;
+    public Boolean oneTime = true;
+    
     
     /*
     * Constructor
     */
     public Server(int port) throws IOException{
-        clientCount = 0; 
-        mServerSocket = new MServerSocket(port);
+        serverSocket = new ServerSocket(port);
         if(Debug.debug) System.out.println("Listening on port: " + port);
-        mSocketList = new MSocket[MAX_CLIENTS];
         eventQueue = new LinkedBlockingQueue<MPacket>();
+        clientCount = 0;
+        this.out = new ArrayList<ObjectOutputStream>();
+        this.socketList = new ArrayList<Socket>();
+        this.clientList = new ArrayList<String>();
     }
-    
+        
     /*
     *Starts the listener and sender threads 
     */
     public void startThreads() throws IOException{
-        //Listen for new clients
-        while(clientCount < MAX_CLIENTS){
-            //Start a new listener thread for each new client connection
-            MSocket mSocket = mServerSocket.accept();
-            
-            new Thread(new ServerListenerThread(mSocket, eventQueue)).start();
-            
-            mSocketList[clientCount] = mSocket;                            
-            
-            clientCount++;
-        }
-        
-        //Start a new sender thread 
-        new Thread(new ServerSenderThread(mSocketList, eventQueue)).start();    
+    	
+    	// Start a MISSILE TICK thread
+    	new Thread(new SynchronizeProjectileThread(clientCount, out)).start();
+    	
+        //Listen for new clients always to support dynamic joins.
+    	while(true) {
+    		socket = serverSocket.accept();
+    		clientCount++;
+    		new Thread(new ServerListenerThread(socket, out, clientCount, socketList, clientList, oneTime)).start();
+    	}  
     }
 
         

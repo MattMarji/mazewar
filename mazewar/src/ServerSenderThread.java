@@ -1,20 +1,27 @@
 import java.io.InvalidObjectException;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class ServerSenderThread implements Runnable {
 
     //private ObjectOutputStream[] outputStreamList = null;
-    private MSocket[] mSocketList = null;
-    private BlockingQueue eventQueue = null;
-    private int globalSequenceNumber; 
+    private List<Socket> socketList = null;
+    private List<ObjectOutputStream> outList = null;
+    private Socket socket = null;
+    private MPacket helloPacket = null;
+    private Boolean oneTime = null;
     
-    public ServerSenderThread(MSocket[] mSocketList,
-                              BlockingQueue eventQueue){
-        this.mSocketList = mSocketList;
-        this.eventQueue = eventQueue;
-        this.globalSequenceNumber = 0;
+    public ServerSenderThread(List<Socket> socketList, List<ObjectOutputStream> outList, Socket socket, MPacket helloPacket, Boolean oneTime){
+        this.socketList = socketList;
+        this.outList = outList;
+        this.socket = socket;
+        this.helloPacket = helloPacket;
+        this.oneTime = oneTime;
     }
 
     /*
@@ -24,41 +31,52 @@ public class ServerSenderThread implements Runnable {
     public void handleHello(){
         
         //The number of players
-        int playerCount = mSocketList.length;
+        int playerCount = socketList.size();
         Random randomGen = null;
-        Player[] players = new Player[playerCount];
+        List<Player> players = new ArrayList<Player>();
+ 
+        
         if(Debug.debug) System.out.println("In handleHello");
-        MPacket hello = null;
-        try{        
+        try{       
+        	
             for(int i=0; i<playerCount; i++){
-                hello = (MPacket)eventQueue.take();
-                //Sanity check 
-                if(hello.type != MPacket.HELLO){
-                    throw new InvalidObjectException("Expecting HELLO Packet");
-                }
+
                 if(randomGen == null){
-                   randomGen = new Random(hello.mazeSeed); 
+                   randomGen = new Random(this.helloPacket.mazeSeed); 
                 }
                 //Get a random location for player
                 Point point =
-                    new Point(randomGen.nextInt(hello.mazeWidth),
-                          randomGen.nextInt(hello.mazeHeight));
+                    new Point(randomGen.nextInt(this.helloPacket.mazeWidth),
+                          randomGen.nextInt(this.helloPacket.mazeHeight));
+                
+                String ip = socket.getRemoteSocketAddress().toString();
+                int port = socket.getPort();
                 
                 //Start them all facing North
-                Player player = new Player(hello.name, point, Player.North);
-                players[i] = player;
+                Player player = new Player(this.helloPacket.name, point, Player.North, ip, port);
+                players.add(player);
+            }
+            MPacket helloResponse = new MPacket("CNS", MPacket.HELLO, MPacket.HELLO_RESP);
+            helloResponse.players = players;
+            //Now broadcast the HELLO
+            if(Debug.debug) System.out.println("Sending " + helloResponse);
+            
+            //TODO MUTEX THIS BITCH
+            outList.add(new ObjectOutputStream(socket.getOutputStream()));
+            
+            for(ObjectOutputStream out: outList){
+            	//Once it is made use it to send.
+                out.writeObject(helloResponse);
             }
             
-            hello.event = MPacket.HELLO_RESP;
-            hello.players = players;
-            //Now broadcast the HELLO
-            if(Debug.debug) System.out.println("Sending " + hello);
-            for(MSocket mSocket: mSocketList){
-                mSocket.writeObject(hello);   
+            if(oneTime) {
+            	ObjectOutputStream tokenHolder = outList.get(0);
+                MPacket tokenSend = new MPacket("CNS", MPacket.TOKEN, MPacket.TOKEN_SEND);
+                tokenHolder.writeObject(tokenSend);
+                oneTime = false;
             }
-        }catch(InterruptedException e){
-            e.printStackTrace();
-            Thread.currentThread().interrupt();    
+            
+            
         }catch(IOException e){
             e.printStackTrace();
             Thread.currentThread().interrupt();
@@ -66,30 +84,10 @@ public class ServerSenderThread implements Runnable {
     }
     
     public void run() {
-        MPacket toBroadcast = null;
         
-        handleHello();
-        
-        // Create a thread that will synchronize projectiles...
-        new Thread(new SynchronizeProjectileThread(eventQueue)).start();
-        
-        while(true){
-            try{
-                //Take packet from queue to broadcast
-                //to all clients
-                toBroadcast = (MPacket)eventQueue.take();
-                //Tag packet with sequence number and increment sequence number
-                toBroadcast.sequenceNumber = this.globalSequenceNumber++;
-                if(Debug.debug) System.out.println("Sending " + toBroadcast);
-                //Send it to all clients
-                for(MSocket mSocket: mSocketList){
-                    mSocket.writeObject(toBroadcast);
-                }
-            }catch(InterruptedException e){
-                System.out.println("Throwing Interrupt");
-                Thread.currentThread().interrupt();    
-            }
-            
-        }
+		handleHello();
+		//Mutex this badboy	
+		
+		return;
     }
 }

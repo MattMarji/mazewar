@@ -1,0 +1,22 @@
+import java.lang.Thread;
+import java.util.concurrent.BlockingQueue;
+
+public class SynchronizeProjectileThread implements Runnable  {
+    
+    public SynchronizeProjectileThread(int clientCount, List<ObjectOutputStream> out){
+       
+    }
+
+	@Override
+	public void run() {
+		while(true){
+            try{
+                MPacket tick = new MPacket("SYNC", MPacket.ACTION, MPacket.MISSILE_TICK);
+                Thread.currentThread().sleep(200);
+            }catch(Exception e){
+            }
+        }
+		
+	}
+
+}

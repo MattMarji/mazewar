@@ -4,12 +4,16 @@
 		<item value="675" key="dialogHeight"/>
 		<item value="1200" key="dialogWidth"/>
 		<list key="textEntries">
+			<item value="1"/>
 		</list>
 		<list key="orderedElements">
+			<item value="org.eclipse.debug.ui.actions.WatchCommand"/>
 		</list>
 		<list key="orderedProviders">
+			<item value="org.eclipse.ui.commands"/>
 		</list>
 		<list key="textArray">
+			<item value="watch"/>
 		</list>
 	</section>
 	<section name="ImportExportAction">
