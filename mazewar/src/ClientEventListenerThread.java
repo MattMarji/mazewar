@@ -19,23 +19,26 @@ public class ClientEventListenerThread implements Runnable {
     private Integer globalSeqNum = 0;
     private Maze maze;
     private List<Player> players = null;
+    private BlockingQueue eventQueue = null;
     
     
     // This thread will be spawned once per client and will listen to a particular client for events
     public ClientEventListenerThread(MSocket mSocket,
-            Hashtable<String, Client> clientTable, Maze maze, List<Player> players){
+            Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue){
 		this.mSocket = mSocket;
 		this.clientTable = clientTable;
 		this.maze = maze;
 		this.players = players;
+		this.eventQueue = eventQueue;
 		
-		if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
+		if(Debug.debug) System.out.println("Instatiating ClientEventListenerThread");
 	}
 
     public void run() {
         MPacket received = null;
         Client client = null;
-        if(Debug.debug) System.out.println("Starting ClientListenerThread");
+        if(Debug.debug) System.out.println("Starting ClientEventListenerThread");
+        
         while(true){
             try{
                 received = (MPacket) in.readObject();
@@ -44,22 +47,10 @@ public class ClientEventListenerThread implements Runnable {
                 
                 // If it is a TOKEN packet, accept token and execute next event!
                 if (received.event == MPacket.TOKEN_SEND) {
-                	/*Pop off the eventQueue, execute event, pass on the token. So we need to have access to the clientList
-                	 * Don't actually want to do the work here I don't think.
-                	 * ClientSenderThread should broadcast the packet to all clients, maybe we can trigger this using a flag?
-                	 * Then we need to wait for ACKs to come back
-                	 * eventQueue.take();
-                	 * broadcast event to all clients
-                	 * wait for ACKS to come back from everyone
-                	 * executeEvent(me,event.event);
-                	 * token handoff to the next guy
-                	 */
+                	
+                	// We need to create a new ClientSenderThread that accepts MSocket (this one currently is only for the Server)
+                	//new Thread(new ClientSenderThread(out, eventQueue, clientTable)).start();
                 } 
-                
-                // If it is an event packet, do event! 
-            	executeEvent(client, received.event);
-            	
-            	//WE NEED TO SEND AN ACK BACK! 
 
             }catch(IOException e){
                 Thread.currentThread().interrupt();    

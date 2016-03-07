@@ -1,0 +1,32 @@
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.concurrent.BlockingQueue;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+public class ClientConnectionThread implements Runnable {
+	
+	MServerSocket clientConnect = null;
+
+    public ClientConnectionThread(){
+
+    }
+
+    public void run() {
+    	
+    	// Each client runs a thread that listens for incoming connections. 
+    	// Sit and accept ALL connections coming in from other clients.
+       try {
+		clientConnect = new MServerSocket(4444);
+		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+}

@@ -191,31 +191,43 @@ public class Mazewar extends JFrame {
                 if(Debug.debug) System.out.println("hello sent");
                 
                 this.in = new ObjectInputStream(socket.getInputStream());
+                
                 //This should be our client list. We need to establish connections to everyone in this list before proceeding.
                 MPacket response = (MPacket) in.readObject();
-                if(Debug.debug) System.out.println("Received response from server");
-
+                if(Debug.debug) System.out.println("Received response from server: " + response.toString());
+                
                 this.playerList = response.players;
 
                 //Initialize hash table of clients to client name 
                 clientTable = new Hashtable<String, Client>(); 
                 
-                // Create the GUIClient and connect it to the KeyListener queue
-                //RemoteClient remoteClient = null;
-                for(Player player: response.players){  
-                        if(player.name.equals(name)){
-                        	if(Debug.debug)System.out.println("Adding guiClient: " + player);
-                                guiClient = new GUIClient(name, eventQueue);
-                                maze.addClientAt(guiClient, player.point, player.direction);
-                                this.addKeyListener(guiClient);
-                                clientTable.put(player.name, guiClient);
-                        }else{
-                        	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
-                                RemoteClient remoteClient = new RemoteClient(player.name);
-                                maze.addClientAt(remoteClient, player.point, player.direction);
-                                clientTable.put(player.name, remoteClient);
-                        }
-                }
+                for(Player player : response.players) {
+	        		try {
+						if(player.name.equals(name)){
+		                	if(Debug.debug)System.out.println("Adding guiClient: " + player);
+		                        guiClient = new GUIClient(name, eventQueue);
+		                        maze.addClientAt(guiClient, player.point, player.direction);
+		                        this.addKeyListener(guiClient);
+		                        clientTable.put(player.name, guiClient);
+		                }else{
+		                	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
+		                		
+		                		// Only need to connect to remote clients!
+		                		//TODO - CONNECT TO EACH CLIENT ON A RANDOM PORT
+		                		player.mSocket = new MSocket(player.ip, player.port);
+		                		System.out.println("Connected to remote client: " + player.name);
+		                		
+		                        RemoteClient remoteClient = new RemoteClient(player.name);
+		                        maze.addClientAt(remoteClient, player.point, player.direction);
+		                        clientTable.put(player.name, remoteClient);
+		                }
+						
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	        		
+	        	}
                 
                 // Use braces to force constructors not to be called at the beginning of the
                 // constructor.
@@ -296,44 +308,18 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	//Start a new sender thread for each client 
-            new Thread(new ClientSenderThread(out, eventQueue)).start();
-            
-            // Start a new listener thread for the central naming server
-            new Thread(new ClientListenerThread(in,
-                    clientTable, maze, playerList)).start();
+        	new Thread(new ClientConnectionThread()).start();
         	
-        	for(Player player : playerList) {
+            // Start a new listener thread for the central naming server
+            new Thread(new ClientListenerThread(in,out,
+                    clientTable, maze, playerList, eventQueue)).start();
+        	
+        	// There may be an issue here - we want to avoid making a thread for this.player in playerList.
+            /*for(Player player : playerList) {
                 //Start a new listener thread for each client
-                new Thread(new ClientEventListenerThread(player.mSocket, clientTable, maze, playerList)).start();    
-        	}
+                new Thread(new ClientEventListenerThread(player.mSocket, clientTable, maze, playerList, eventQueue)).start();    
+        	}*/
         }
-        
-        public void connectToPeers(MPacket pkt) {
-        	if(pkt.event == MPacket.HELLO_RESP){
-        		playerList = pkt.players;
-	        	ObjectOutputStream out = null;
-	        	ObjectInputStream in = null;
-	        	
-	        	for(Player player : playerList) {
-	        		try {
-	        			// Connect to each client 
-	        			//TODO - CONNECT TO EACH CLIENT ON A RANDOM PORT
-						player.mSocket = new MSocket(player.ip, player.port);
-						//player.out = out = new ObjectOutputStream(player.mSocket.getOutputStream());
-		        		//player.in = in = new ObjectInputStream(player.mSocket.getInputStream());	
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-	        		
-	        	}
-	        } else {
-	        	//print some error that we didn't get a hello response from the server.
-	        	return;
-	        }
-        }
-
         
         /**
          * Entry point for the game.  

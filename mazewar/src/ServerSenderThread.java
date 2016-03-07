@@ -1,5 +1,6 @@
 import java.io.InvalidObjectException;
 import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -49,7 +50,9 @@ public class ServerSenderThread implements Runnable {
                     new Point(randomGen.nextInt(this.helloPacket.mazeWidth),
                           randomGen.nextInt(this.helloPacket.mazeHeight));
                 
-                String ip = socket.getRemoteSocketAddress().toString();
+                InetSocketAddress sockaddr = (InetSocketAddress) socket.getRemoteSocketAddress();
+                String ip = sockaddr.getAddress().getHostAddress();
+                
                 int port = socket.getPort();
                 
                 //Start them all facing North
