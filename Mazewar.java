@@ -32,6 +32,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.Socket;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -71,8 +72,6 @@ public class Mazewar extends JFrame {
          */
         private Mazewar mazewar = null;
         private MSocket mSocket = null;
-        private ObjectOutputStream out = null;
-        private ObjectInputStream in = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -100,6 +99,14 @@ public class Mazewar extends JFrame {
          */
         private JTable scoreTable = null;
         
+        /*These are the variables we've added for the new socket etc.
+         */
+        private Socket socket = null;
+        private ObjectOutputStream out = null;
+        private ObjectInputStream in = null;
+        private List<Player> playerList = null; 
+         
+
         /** 
          * Create the textpane statically so that we can 
          * write to it globally using
@@ -156,7 +163,7 @@ public class Mazewar extends JFrame {
                 eventQueue = new LinkedBlockingQueue<MPacket>();
                 
                 // Create the maze
-                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed, eventQueue);
+                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
                 assert(maze != null);
                 
                 // Have the ScoreTableModel listen to the maze to find
@@ -171,49 +178,56 @@ public class Mazewar extends JFrame {
                   Mazewar.quit();
                 }
                 
-                mSocket = new MSocket(serverHost, serverPort);
+                this.socket = new Socket(serverHost, serverPort);
+                this.out = new ObjectOutputStream(socket.getOutputStream());
                 
-                Socket socket = new Socket(serverHost, serverPort);
                 //Send hello packet to server
                 MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT);
                 hello.mazeWidth = mazeWidth;
                 hello.mazeHeight = mazeHeight;
                 
                 if(Debug.debug) System.out.println("Sending hello");
-                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 out.writeObject(hello);
-                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-                
-                while(in.available() <= 0) {
-                	
-                }
-                
-                MPacket response = (MPacket) in.readObject();
                 if(Debug.debug) System.out.println("hello sent");
-                //Receive response from server
-                MPacket resp = (MPacket)mSocket.readObject();
-                if(Debug.debug) System.out.println("Received response from server");
-
                 
+                this.in = new ObjectInputStream(socket.getInputStream());
+                
+                //This should be our client list. We need to establish connections to everyone in this list before proceeding.
+                MPacket response = (MPacket) in.readObject();
+                if(Debug.debug) System.out.println("Received response from server: " + response.toString());
+                
+                this.playerList = response.players;
+
                 //Initialize hash table of clients to client name 
                 clientTable = new Hashtable<String, Client>(); 
                 
-                // Create the GUIClient and connect it to the KeyListener queue
-                //RemoteClient remoteClient = null;
-                for(Player player: resp.players){  
-                        if(player.name.equals(name)){
-                        	if(Debug.debug)System.out.println("Adding guiClient: " + player);
-                                guiClient = new GUIClient(name, eventQueue);
-                                maze.addClientAt(guiClient, player.point, player.direction);
-                                this.addKeyListener(guiClient);
-                                clientTable.put(player.name, guiClient);
-                        }else{
-                        	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
-                                RemoteClient remoteClient = new RemoteClient(player.name);
-                                maze.addClientAt(remoteClient, player.point, player.direction);
-                                clientTable.put(player.name, remoteClient);
-                        }
-                }
+                for(Player player : response.players) {
+	        		try {
+						if(player.name.equals(name)){
+		                	if(Debug.debug)System.out.println("Adding guiClient: " + player);
+		                        guiClient = new GUIClient(name, eventQueue);
+		                        maze.addClientAt(guiClient, player.point, player.direction);
+		                        this.addKeyListener(guiClient);
+		                        clientTable.put(player.name, guiClient);
+		                }else{
+		                	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
+		                		
+		                		// Only need to connect to remote clients!
+		                		//TODO - CONNECT TO EACH CLIENT ON A RANDOM PORT
+		                		player.mSocket = new MSocket(player.ip, player.port);
+		                		System.out.println("Connected to remote client: " + player.name);
+		                		
+		                        RemoteClient remoteClient = new RemoteClient(player.name);
+		                        maze.addClientAt(remoteClient, player.point, player.direction);
+		                        clientTable.put(player.name, remoteClient);
+		                }
+						
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	        		
+	        	}
                 
                 // Use braces to force constructors not to be called at the beginning of the
                 // constructor.
@@ -293,12 +307,19 @@ public class Mazewar extends JFrame {
          listening for events
         */
         private void startThreads(){
-                //Start a new sender thread 
-                new Thread(new ClientSenderThread(mSocket, eventQueue)).start();
-                //Start a new listener thread 
-                new Thread(new ClientListenerThread(mSocket, clientTable)).start();    
+        	
+        	new Thread(new ClientConnectionThread()).start();
+        	
+            // Start a new listener thread for the central naming server
+            new Thread(new ClientListenerThread(in,out,
+                    clientTable, maze, playerList, eventQueue)).start();
+        	
+        	// There may be an issue here - we want to avoid making a thread for this.player in playerList.
+            /*for(Player player : playerList) {
+                //Start a new listener thread for each client
+                new Thread(new ClientEventListenerThread(player.mSocket, clientTable, maze, playerList, eventQueue)).start();    
+        	}*/
         }
-
         
         /**
          * Entry point for the game.  

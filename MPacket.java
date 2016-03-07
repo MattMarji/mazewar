@@ -1,10 +1,12 @@
 import java.io.Serializable;
+import java.util.List;
 
 public class MPacket implements Serializable {
 
     /*The following are the type of events*/
     public static final int HELLO = 100;
     public static final int ACTION = 200;
+    public static final int TOKEN = 300;
 
     /*The following are the specific action 
     for each type*/
@@ -21,6 +23,9 @@ public class MPacket implements Serializable {
     public static final int FIRE = 205;
     public static final int MISSILE_TICK = 206;
     
+    /*Token actions*/
+    public static final int TOKEN_SEND = 301;
+    
     //These fields characterize the event  
     public int type;
     public int event; 
@@ -35,7 +40,7 @@ public class MPacket implements Serializable {
     public int mazeSeed;
     public int mazeHeight;
     public int mazeWidth; 
-    public Player[] players;
+    public List<Player> players;
 
     public MPacket(int type, int event){
         this.type = type;
@@ -59,6 +64,9 @@ public class MPacket implements Serializable {
             case 200:
                 typeStr = "ACTION";
                 break;
+            case 300:
+            	typeStr = "TOKEN";
+            	break;
             default:
                 typeStr = "ERROR";
                 break;        
@@ -87,6 +95,9 @@ public class MPacket implements Serializable {
                 break;
             case 206:
             	eventStr = "MISSILE_TICK";
+            	break;
+            case 301:
+            	eventStr = "TOKEN_SEND";
             	break;
             default:
                 eventStr = "ERROR";

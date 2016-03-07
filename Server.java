@@ -20,6 +20,7 @@ public class Server {
     private int clientCount; //The number of clients before game starts
     private List<Socket> socketList = null; //A list of MSockets
     private List<String> clientList = null;
+    public Boolean oneTime = true;
     
     
     /*
@@ -34,17 +35,20 @@ public class Server {
         this.socketList = new ArrayList<Socket>();
         this.clientList = new ArrayList<String>();
     }
-    
+        
     /*
     *Starts the listener and sender threads 
     */
     public void startThreads() throws IOException{
     	
+    	// Start a MISSILE TICK thread
+    	new Thread(new SynchronizeProjectileThread(clientCount, out)).start();
+    	
         //Listen for new clients always to support dynamic joins.
     	while(true) {
     		socket = serverSocket.accept();
     		clientCount++;
-    		new Thread(new ServerListenerThread(socket, out, clientCount, socketList, clientList)).start();
+    		new Thread(new ServerListenerThread(socket, out, clientCount, socketList, clientList, oneTime)).start();
     	}  
     }
 

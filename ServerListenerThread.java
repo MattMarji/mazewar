@@ -4,8 +4,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
-import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,35 +14,30 @@ public class ServerListenerThread implements Runnable {
     private BlockingQueue eventQueue = null;
     private Integer/*[]*/ clientSeqNum = 0;
     private HashMap<Integer,MPacket> recvdPkts = null;
-    private Boolean checkStoredPkt = true;
-    private MPacket storedPkt = null;
     private ObjectInputStream in = null;
     private List<ObjectOutputStream> out = null;
     private int clientCount; //The number of clients before game starts
     private List<Socket> socketList = null; //A list of MSockets
     private List<String> clientList = null;
     private Boolean helloRecvd = false;
+    private Boolean oneTime = false;
     
     /*There is a listener thread per client here, so I think we realistically only need to look at the one variable, and don't need to store them on a per client basis.
     If it turns out that we do need to keep them on a per client basis, then uncomment the array stuff both here and below*/
 
-    public ServerListenerThread(Socket socket, List<ObjectOutputStream> out, int clientCount, List<Socket> socketList, List<String> clientList){
+    public ServerListenerThread(Socket socket, List<ObjectOutputStream> out, int clientCount, List<Socket> socketList, List<String> clientList, Boolean oneTime){
         this.socket = socket;
 		this.clientSeqNum = 0;
 		this.recvdPkts = new HashMap<Integer, MPacket>();
-		this.checkStoredPkt = false;
-		this.storedPkt = null;
 		this.out = out;
         this.socketList = socketList;
         this.clientList = clientList;
-        this.clientCount = clientCount;
-
-        
+        this.clientCount = clientCount;   
+        this.oneTime = oneTime;
     }
 
     public void run() {
         MPacket received = null;
-        ObjectOutputStream outer = null;
         if(Debug.debug) System.out.println("Starting a listener");
         
         try {
@@ -65,8 +58,6 @@ public class ServerListenerThread implements Runnable {
  	 					return; 
  	 				}			
                  
- 				
- 				
                  if(Debug.debug) System.out.println("Received: " + received);
                  
                  String incomingName = received.name.toLowerCase();
@@ -83,13 +74,13 @@ public class ServerListenerThread implements Runnable {
                  //TODO check that the recvd pkt is a hello. 
                  if(clientList.isEmpty() || clientList.size() == 0 || !(clientList.contains(incomingName))) {
                 	 clientList.add(incomingName);
-                     clientCount++;
+                     //clientCount++;
                      socketList.add(socket);
                      System.out.println("Client: " + incomingName + " added to the game, there are now " + clientCount + " clients.");
                      helloRecvd = true;
                      
                      //Start a new sender thread here to broadcast our new clientList to everyone who is playing.
-                     new Thread(new ServerSenderThread(socketList, out, socket)).start();
+                     new Thread(new ServerSenderThread(socketList, out, socket, received, oneTime)).start();
                      
                  } else {
                  

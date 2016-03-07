@@ -103,6 +103,11 @@ public abstract class Maze {
      * @return <code>true</code> if successful, false if failure. 
      */
     public abstract boolean moveClientBackward(Client client);
+    
+    /**
+     * Synchronize all the bullets/projectiles in the {@link Maze}.
+     */
+    public abstract void syncBullets();
 
     /**
      * Obtain an {@link Iterator} over all {@link Client}s in the {@link Maze} 
