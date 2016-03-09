@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.List;
@@ -79,7 +77,7 @@ public class Mazewar extends JFrame {
          * The Client will also be listening on a ServerSocket
          */
         
-        private ServerSocket serverSocket = null;
+        private MServerSocket mServerSocket = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -186,21 +184,11 @@ public class Mazewar extends JFrame {
                   Mazewar.quit();
                 }
                 
-                
-                // Socket b/w Client <-> Central Naming Server
                 this.socket = new Socket(serverHost, serverPort);
                 this.out = new ObjectOutputStream(socket.getOutputStream());
                 
-                // Server Socket for Client
-                this.serverSocket = new ServerSocket(0);
-                
-                // Send in hello packet the ip and port others can connect to this client on.
-                InetSocketAddress sockaddr = (InetSocketAddress) this.serverSocket.getLocalSocketAddress();
-                String ip = sockaddr.getAddress().getHostAddress();
-                int port = this.serverSocket.getLocalPort();
-                
                 //Send hello packet to server
-                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT,ip ,port);
+                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT);
                 hello.mazeWidth = mazeWidth;
                 hello.mazeHeight = mazeHeight;
                 
@@ -326,7 +314,7 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	new Thread(new ClientConnectionThread(this.serverSocket)).start();
+        	new Thread(new ClientConnectionThread()).start();
         	
             // Start a new listener thread for the central naming server
             new Thread(new ClientListenerThread(in,out,

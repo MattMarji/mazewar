@@ -80,7 +80,7 @@ public class ServerListenerThread implements Runnable {
                      helloRecvd = true;
                      
                      //Start a new sender thread here to broadcast our new clientList to everyone who is playing.
-                     new Thread(new ServerSenderThread(socketList, out, socket, received, oneTime, received.ip, received.port)).start();
+                     new Thread(new ServerSenderThread(socketList, out, socket, received, oneTime)).start();
                      
                  } else {
                  

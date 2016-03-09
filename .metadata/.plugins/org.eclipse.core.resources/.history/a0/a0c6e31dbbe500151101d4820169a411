@@ -87,7 +87,7 @@ public class ClientListenerThread implements Runnable {
     		if (!this.players.contains(player)) {
     			try {
         			// Connect to new client 
-					player.mSocket = new MSocket(player.ip, player.port);
+					player.mSocket = new MSocket(player.ip, 4445);
 					
 					// Add player to our Client-level playerList
 					this.players.add(player);

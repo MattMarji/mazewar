@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
@@ -11,21 +10,31 @@ import java.util.List;
 
 public class ClientConnectionThread implements Runnable {
 	
-	ServerSocket mClientConnect = null;
+	MServerSocket mClientConnect = null;
 	MSocket mSocket = null;
 
-    public ClientConnectionThread(ServerSocket serverSocket){
-    	this.mClientConnect = serverSocket;
+    public ClientConnectionThread(MServerSocket mServerSocket){
+
     }
 
     public void run() {
-    	       
+    	
+    	// Each client runs a thread that listens for incoming connections. 
+    	// Sit and accept ALL connections coming in from other clients.
+       try {
+    	   
+		System.out.print("Listening for connections...");
+		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+       
        //Listen for new clients always to support dynamic joins.
 	   	while(true) {
 	   		
 	   		try {
-	   			Socket socket = mClientConnect.accept();
-	   	    	mSocket = new MSocket(socket);
+				mSocket = mClientConnect.accept();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

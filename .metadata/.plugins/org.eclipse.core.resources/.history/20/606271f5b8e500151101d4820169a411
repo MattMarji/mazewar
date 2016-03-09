@@ -326,7 +326,7 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	new Thread(new ClientConnectionThread(this.serverSocket)).start();
+        	new Thread(new ClientConnectionThread()).start();
         	
             // Start a new listener thread for the central naming server
             new Thread(new ClientListenerThread(in,out,

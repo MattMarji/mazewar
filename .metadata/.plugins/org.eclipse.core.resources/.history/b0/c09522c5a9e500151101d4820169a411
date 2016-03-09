@@ -61,8 +61,6 @@ public class MPacket implements Serializable {
         this.name = name;
         this.type = type;
         this.event = event;
-        this.ip = ip;
-        this.port = port;
     }
     
     public String toString(){

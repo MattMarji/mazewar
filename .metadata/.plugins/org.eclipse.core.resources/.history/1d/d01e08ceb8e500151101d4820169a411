@@ -16,17 +16,13 @@ public class ServerSenderThread implements Runnable {
     private Socket socket = null;
     private MPacket helloPacket = null;
     private Boolean oneTime = null;
-    private String ip = null;
-    private int port = 0;
     
-    public ServerSenderThread(List<Socket> socketList, List<ObjectOutputStream> outList, Socket socket, MPacket helloPacket, Boolean oneTime, String ip, int port){
+    public ServerSenderThread(List<Socket> socketList, List<ObjectOutputStream> outList, Socket socket, MPacket helloPacket, Boolean oneTime){
         this.socketList = socketList;
         this.outList = outList;
         this.socket = socket;
         this.helloPacket = helloPacket;
         this.oneTime = oneTime;
-        this.ip = ip;
-        this.port = port;
     }
 
     /*
@@ -54,8 +50,13 @@ public class ServerSenderThread implements Runnable {
                     new Point(randomGen.nextInt(this.helloPacket.mazeWidth),
                           randomGen.nextInt(this.helloPacket.mazeHeight));
                 
+                InetSocketAddress sockaddr = (InetSocketAddress) socket.getRemoteSocketAddress();
+                String ip = sockaddr.getAddress().getHostAddress();
+                
+                int port = socket.getPort();
+                
                 //Start them all facing North
-                Player player = new Player(this.helloPacket.name, point, Player.North, this.ip, this.port);
+                Player player = new Player(this.helloPacket.name, point, Player.North, ip, port);
                 players.add(player);
             }
             MPacket helloResponse = new MPacket("CNS", MPacket.HELLO, MPacket.HELLO_RESP);

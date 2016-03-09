@@ -19,13 +19,24 @@ public class ClientConnectionThread implements Runnable {
     }
 
     public void run() {
-    	       
+    	
+    	// Each client runs a thread that listens for incoming connections. 
+    	// Sit and accept ALL connections coming in from other clients.
+       try {
+    	Socket socket = mClientConnect.accept();
+    	mSocket = new MSocket(socket);
+		System.out.print("Listening for connections...");
+		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+       
        //Listen for new clients always to support dynamic joins.
 	   	while(true) {
 	   		
 	   		try {
-	   			Socket socket = mClientConnect.accept();
-	   	    	mSocket = new MSocket(socket);
+				mSocket = mClientConnect.accept();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.List;
@@ -74,12 +72,6 @@ public class Mazewar extends JFrame {
          */
         private Mazewar mazewar = null;
         private MSocket mSocket = null;
-        
-        /*
-         * The Client will also be listening on a ServerSocket
-         */
-        
-        private ServerSocket serverSocket = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -186,21 +178,11 @@ public class Mazewar extends JFrame {
                   Mazewar.quit();
                 }
                 
-                
-                // Socket b/w Client <-> Central Naming Server
                 this.socket = new Socket(serverHost, serverPort);
                 this.out = new ObjectOutputStream(socket.getOutputStream());
                 
-                // Server Socket for Client
-                this.serverSocket = new ServerSocket(0);
-                
-                // Send in hello packet the ip and port others can connect to this client on.
-                InetSocketAddress sockaddr = (InetSocketAddress) this.serverSocket.getLocalSocketAddress();
-                String ip = sockaddr.getAddress().getHostAddress();
-                int port = this.serverSocket.getLocalPort();
-                
                 //Send hello packet to server
-                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT,ip ,port);
+                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT);
                 hello.mazeWidth = mazeWidth;
                 hello.mazeHeight = mazeHeight;
                 
@@ -231,7 +213,7 @@ public class Mazewar extends JFrame {
 		                	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
 		                		
 		                		// Only need to connect to remote clients!
-		                		// Connect to each client on their server port.
+		                		//TODO - CONNECT TO EACH CLIENT ON A RANDOM PORT
 		                		player.mSocket = new MSocket(player.ip, player.port);
 		                		System.out.println("Connected to remote client: " + player.name);
 		                		
@@ -326,7 +308,7 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	new Thread(new ClientConnectionThread(this.serverSocket)).start();
+        	new Thread(new ClientConnectionThread()).start();
         	
             // Start a new listener thread for the central naming server
             new Thread(new ClientListenerThread(in,out,
