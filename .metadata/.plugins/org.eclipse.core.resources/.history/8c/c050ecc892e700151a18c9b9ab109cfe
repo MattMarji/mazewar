@@ -49,8 +49,18 @@ public class ClientSenderThread implements Runnable {
         while (players.size() <= 1) {
         	if (eventQueue.size() >= 1) {
         		try {
+        			
         			// Event Queue only stores events for this client.
     				MPacket next = eventQueue.take();
+    				
+    				// TODO We will now send this packet to all players via broadcast.
+    				for (Player player: players) {
+    					// Get this client. Determine next person in line.
+    					if (!player.name.equals(clientName)) {
+    						//TODO Use writeObject with error!
+    						player.mSocket.writeObjectNoError(next);
+    					}
+    				}
     				
     				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
     				Client client = clientTable.get(clientName);
@@ -61,31 +71,6 @@ public class ClientSenderThread implements Runnable {
     				e.printStackTrace();
     			}
         	}
-        }
-        
-        if (players.size() > 1) {
-        	try {
-    			
-    			// Event Queue only stores events for this client.
-				MPacket next = eventQueue.take();
-				
-				// TODO We will now send this packet to all players via broadcast.
-				for (Player player: players) {
-					// Get this client. Determine next person in line.
-					if (!player.name.equals(clientName)) {
-						//TODO Use writeObject with error!
-						player.mSocket.writeObjectNoError(next);
-					}
-				}
-				
-				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
-				Client client = clientTable.get(clientName);
-				executeEvent(client, next.event);
-				
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
         }
         
         // We send token to the next client

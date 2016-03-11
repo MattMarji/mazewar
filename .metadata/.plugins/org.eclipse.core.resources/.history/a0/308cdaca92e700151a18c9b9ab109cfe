@@ -49,6 +49,7 @@ public class ClientSenderThread implements Runnable {
         while (players.size() <= 1) {
         	if (eventQueue.size() >= 1) {
         		try {
+        			
         			// Event Queue only stores events for this client.
     				MPacket next = eventQueue.take();
     				

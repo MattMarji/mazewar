@@ -69,9 +69,7 @@ public class ServerSenderThread implements Runnable {
                 out.writeObject(helloResponse);
             }
             
-            
-            // TODO - THIS STILL IS INCORRECT
-            if(oneTime && playerList.size() <= 1) {
+            if(oneTime) {
             	ObjectOutputStream tokenHolder = outList.get(0);
                 MPacket tokenSend = new MPacket("CNS", MPacket.TOKEN, MPacket.TOKEN_SEND);
                 tokenHolder.writeObject(tokenSend);
