@@ -77,6 +77,8 @@ public class ClientListenerThread implements Runnable {
         }
     }
     
+    // TODO Rethink logic involved with this -- population of clients should only occur when the client connects to us.
+    // Cannot assume we show them on GUI right away.
     private void connectToPeers(List<Player> newPlayers) {
     	// We must update our client list now. Compare our list to the one received.
     	boolean hasMatch = false;

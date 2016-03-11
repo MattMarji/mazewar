@@ -27,24 +27,6 @@ public class ClientSenderThread implements Runnable {
     
     public void run() {
         if(Debug.debug) System.out.println("Starting ClientSenderThread");
-
-        if (eventQueue.size() >= 1) {
-    		try {
-				MPacket next = eventQueue.take();
-				
-				// TODO We will now send this packet to all players via broadcast.
-				
-				
-				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
-				Client client = clientTable.get(clientName);
-				executeEvent(client, next.event);
-				
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-    	}
-        
         
         while (players.size() <= 1) {
         	if (eventQueue.size() >= 1) {
@@ -62,8 +44,8 @@ public class ClientSenderThread implements Runnable {
     			}
         	}
         }
-        
-        if (players.size() > 1) {
+
+        if (eventQueue.size() >= 1) {
         	try {
     			
     			// Event Queue only stores events for this client.
@@ -86,7 +68,7 @@ public class ClientSenderThread implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        }
+    	}
         
         // We send token to the next client
 		for (Player player: players) {
@@ -98,6 +80,7 @@ public class ClientSenderThread implements Runnable {
 				
 				Player tokenPlayer = null; 
 				
+				//TODO Modulo size logic
 				if (index == (size-1)) {
 					// Pass token to first person.
 					tokenPlayer = players.get(0);

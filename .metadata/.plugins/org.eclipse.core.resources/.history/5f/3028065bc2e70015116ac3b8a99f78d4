@@ -80,7 +80,6 @@ public class ClientSenderThread implements Runnable {
 				
 				Player tokenPlayer = null; 
 				
-				//TODO Modulo size logic
 				if (index == (size-1)) {
 					// Pass token to first person.
 					tokenPlayer = players.get(0);
