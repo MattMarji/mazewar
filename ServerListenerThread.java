@@ -19,19 +19,21 @@ public class ServerListenerThread implements Runnable {
     private int clientCount; //The number of clients before game starts
     private List<Socket> socketList = null; //A list of MSockets
     private List<String> clientList = null;
+    private List<Player> playerList = null;
     private Boolean helloRecvd = false;
     private Boolean oneTime = false;
     
     /*There is a listener thread per client here, so I think we realistically only need to look at the one variable, and don't need to store them on a per client basis.
     If it turns out that we do need to keep them on a per client basis, then uncomment the array stuff both here and below*/
 
-    public ServerListenerThread(Socket socket, List<ObjectOutputStream> out, int clientCount, List<Socket> socketList, List<String> clientList, Boolean oneTime){
+    public ServerListenerThread(Socket socket, List<ObjectOutputStream> out, int clientCount, List<Socket> socketList, List<String> clientList, List<Player> playerList, Boolean oneTime){
         this.socket = socket;
 		this.clientSeqNum = 0;
 		this.recvdPkts = new HashMap<Integer, MPacket>();
 		this.out = out;
         this.socketList = socketList;
         this.clientList = clientList;
+        this.playerList = playerList;
         this.clientCount = clientCount;   
         this.oneTime = oneTime;
     }
@@ -80,7 +82,7 @@ public class ServerListenerThread implements Runnable {
                      helloRecvd = true;
                      
                      //Start a new sender thread here to broadcast our new clientList to everyone who is playing.
-                     new Thread(new ServerSenderThread(socketList, out, socket, received, oneTime)).start();
+                     new Thread(new ServerSenderThread(socketList, playerList, out, socket, received, oneTime, received.ip, received.port)).start();
                      
                  } else {
                  

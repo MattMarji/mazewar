@@ -19,12 +19,7 @@ public class Player implements Serializable {
     public ObjectInputStream in;
     public Socket socket;
     public MSocket mSocket;
-    
-    /*Proposed Changes:
-    public byte hasToken = 0;
-    This would let the server tell people who the token holder is. Can keep this updated, or can also just use it one time to set the
-    initial token holder.
-    */
+
     public Player(String name, Point point, int direction){
         this.point = point;
         this.name = name;

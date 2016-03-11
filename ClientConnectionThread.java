@@ -1,40 +1,46 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 
 public class ClientConnectionThread implements Runnable {
 	
-	MServerSocket mClientConnect = null;
+	ServerSocket mClientConnect = null;
 	MSocket mSocket = null;
-
-    public ClientConnectionThread(){
-
+	List<Player> playerList = null;
+	Hashtable<String, Client> clientTable = null;
+	Maze maze = null;
+	BlockingQueue eventQueue = null;
+	String name = null;
+	
+    public ClientConnectionThread(ServerSocket serverSocket, List<Player> playerList, Hashtable<String, Client> clientTable, Maze maze, BlockingQueue eventQueue, String name){
+    	this.mClientConnect = serverSocket;
+    	this.playerList = playerList;
+    	this.clientTable = clientTable;
+    	this.maze = maze;
+    	this.eventQueue = eventQueue;
+    	this.name = name;
     }
 
     public void run() {
-    	
-    	// Each client runs a thread that listens for incoming connections. 
-    	// Sit and accept ALL connections coming in from other clients.
-       try {
-		mClientConnect = new MServerSocket(4444);
-		System.out.print("Listening for connections...");
-		
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-       
+    	       
        //Listen for new clients always to support dynamic joins.
 	   	while(true) {
 	   		
 	   		try {
-				mSocket = mClientConnect.accept();
+	   			Socket socket = mClientConnect.accept();
+	   	    	mSocket = new MSocket(socket);
+	
+	   	    	// We start a thread to listen on this socket for incoming messages.
+	   	    	new Thread(new ClientEventListenerThread(mSocket, playerList, clientTable, maze, eventQueue, name)).start();
+	   	    	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

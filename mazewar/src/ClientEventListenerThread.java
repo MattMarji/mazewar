@@ -6,30 +6,27 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/* WELCOME TO THE MOST OVER-COMMENTED CODE IN THE WORLD! hahaha enjoy! Lemme know if there is anything you don't agree with!
- * The code could definitely stand to be refactored a little, but lets check validity first.
- * -!- KF 17:37 18/1/2016*/
 
 public class ClientEventListenerThread implements Runnable {
 
 	
 	private MSocket mSocket  =  null;
-	private ObjectInputStream in = null;
     private Hashtable<String, Client> clientTable = null;
-    private Integer globalSeqNum = 0;
     private Maze maze;
     private List<Player> players = null;
     private BlockingQueue eventQueue = null;
+    private String name = null;
     
     
     // This thread will be spawned once per client and will listen to a particular client for events
-    public ClientEventListenerThread(MSocket mSocket,
-            Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue){
+    public ClientEventListenerThread(MSocket mSocket, List<Player> players,
+            Hashtable<String, Client> clientTable, Maze maze, BlockingQueue eventQueue, String name){
 		this.mSocket = mSocket;
 		this.clientTable = clientTable;
 		this.maze = maze;
 		this.players = players;
 		this.eventQueue = eventQueue;
+		this.name = name;
 		
 		if(Debug.debug) System.out.println("Instatiating ClientEventListenerThread");
 	}
@@ -41,23 +38,30 @@ public class ClientEventListenerThread implements Runnable {
         
         while(true){
             try{
-                received = (MPacket) in.readObject();
-                System.out.println("Received " + received + "Received Type: " + received.event);
+                received = (MPacket) mSocket.readObjectNoError();
+                System.out.println("ClientEventListener: Received " + received + "Received Type: " + received.event);
                 client = clientTable.get(received.name);
                 
                 // If it is a TOKEN packet, accept token and execute next event!
                 if (received.event == MPacket.TOKEN_SEND) {
-                	
-                	// We need to create a new ClientSenderThread that accepts MSocket (this one currently is only for the Server)
-                	//new Thread(new ClientSenderThread(out, eventQueue, clientTable)).start();
+                	new Thread(new ClientSenderThread(eventQueue, clientTable, players, name)).start();
                 } 
+                
+                // If it is another CLIENT introducing themselves, we accept!
+                if (received.event == MPacket.HELLO_INIT) {
+                	
+                	// A client has established a connection with us. Save the mSocket they connected with us on.
+                	// Now we can talk to the player via the mSocket.
+                	for (Player player: players) {
+                		if (received.name.equals(player.name)) {
+                			player.mSocket = mSocket;
+                		}
+                	}
+                }
 
             }catch(IOException e){
                 Thread.currentThread().interrupt();    
-            } catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}            
+            }           
         }
     }
     

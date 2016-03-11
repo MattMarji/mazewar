@@ -41,6 +41,10 @@ public class MPacket implements Serializable {
     public int mazeHeight;
     public int mazeWidth; 
     public List<Player> players;
+    
+    //These are used to note how clients can locate and connect to this client
+    public int port;
+    public String ip;
 
     public MPacket(int type, int event){
         this.type = type;
@@ -51,6 +55,14 @@ public class MPacket implements Serializable {
         this.name = name;
         this.type = type;
         this.event = event;
+    }
+    
+    public MPacket(String name, int type, int event, String ip, int port){
+        this.name = name;
+        this.type = type;
+        this.event = event;
+        this.ip = ip;
+        this.port = port;
     }
     
     public String toString(){

@@ -20,6 +20,7 @@ public class Server {
     private int clientCount; //The number of clients before game starts
     private List<Socket> socketList = null; //A list of MSockets
     private List<String> clientList = null;
+    private List<Player> playerList = null;
     public Boolean oneTime = true;
     
     
@@ -34,6 +35,7 @@ public class Server {
         this.out = new ArrayList<ObjectOutputStream>();
         this.socketList = new ArrayList<Socket>();
         this.clientList = new ArrayList<String>();
+        this.playerList = new ArrayList<Player>();
     }
         
     /*
@@ -48,7 +50,7 @@ public class Server {
     	while(true) {
     		socket = serverSocket.accept();
     		clientCount++;
-    		new Thread(new ServerListenerThread(socket, out, clientCount, socketList, clientList, oneTime)).start();
+    		new Thread(new ServerListenerThread(socket, out, clientCount, socketList, clientList, playerList, oneTime)).start();
     	}  
     }
 

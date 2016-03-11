@@ -16,15 +16,17 @@ public class ClientListenerThread implements Runnable {
     private Maze maze;
     private List<Player> players = null;
     private BlockingQueue eventQueue = null;
+    private String clientName;
     
     public ClientListenerThread(ObjectInputStream in, ObjectOutputStream out,
-            Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue){
+            Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue, String clientName){
 		this.in = in;
 		this.clientTable = clientTable;
 		this.maze = maze;
 		this.players = players;
 		this.eventQueue = eventQueue;
 		this.out = out;
+		this.clientName = clientName;
 		
 		if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
 	}
@@ -46,7 +48,7 @@ public class ClientListenerThread implements Runnable {
                  
                 // If it is a HELLO_RESP from the server, update our Player list and connect to new players
                 if (received.event == MPacket.HELLO_RESP) {
-                	System.out.println("Received " + received + "Received Type: " + received.event);
+                	System.out.println("ClientListener: Received " + received + "Received Type: " + received.event);
                 	connectToPeers(received.players);
                 }
                 
@@ -54,7 +56,7 @@ public class ClientListenerThread implements Runnable {
                 if (received.event == MPacket.TOKEN_SEND) {
                 	System.out.println("Received " + received + "Received Type: " + received.event);
                 	
-                     new Thread(new ClientSenderThread(out, eventQueue, clientTable, players)).start();
+                     new Thread(new ClientSenderThread(eventQueue, clientTable, players, clientName)).start();
                 	/*Pop off the eventQueue, execute event, pass on the token. So we need to have access to the clientList
                 	 * Don't actually want to do the work here I don't think.
                 	 * eventQueue.take(); -- can be done on listener/sender 
@@ -77,17 +79,27 @@ public class ClientListenerThread implements Runnable {
     
     private void connectToPeers(List<Player> newPlayers) {
     	// We must update our client list now. Compare our list to the one received.
+    	boolean hasMatch = false;
     	
     	if (newPlayers.size() <= 1)
     		return;
     	
     	for(Player player : newPlayers) {
     		
+    		// Compare names to determine if we already have them.
+    		for (Player currPlayer : this.players) {
+    			if (currPlayer.name.equals(player.name)) {
+    				System.out.println("We already have a connection to Player: " + player.name);
+    				hasMatch = true;
+    				break;
+    			}
+    		}
+    		
     		// Only create a socket to the player if we do not already have one.
-    		if (!this.players.contains(player)) {
+    		if (!hasMatch) {
     			try {
         			// Connect to new client 
-					player.mSocket = new MSocket(player.ip, 4445);
+					player.mSocket = new MSocket(player.ip, player.port);
 					
 					// Add player to our Client-level playerList
 					this.players.add(player);
@@ -102,9 +114,10 @@ public class ClientListenerThread implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-    		} else {
-    			System.out.println("We already have a connection to Player: " + player.name);
     		}
+    		
+    		// Reset flag.
+    		hasMatch = false;
     		
     	}
     }

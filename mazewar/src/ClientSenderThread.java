@@ -13,28 +13,21 @@ public class ClientSenderThread implements Runnable {
     private BlockingQueue<MPacket> eventQueue = null;
     private Hashtable<String, Client> clientTable = null;
     private List<Player> players = null;
+    private String clientName = null;
     
-    public ClientSenderThread(ObjectOutputStream out,
-                              BlockingQueue eventQueue,
+    public ClientSenderThread(BlockingQueue eventQueue,
                               Hashtable<String, Client> clientTable,
-                              List<Player> players){
-        this.out = out;
+                              List<Player> players,
+                              String clientName){
         this.eventQueue = eventQueue;
         this.clientTable = clientTable;
         this.players = players;
+        this.clientName = clientName;
     }
     
     public void run() {
         if(Debug.debug) System.out.println("Starting ClientSenderThread");
-    	
-        Thread.currentThread();
-		try {
-			Thread.sleep(3000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-        
+
         if (eventQueue.size() >= 1) {
     		try {
 				MPacket next = eventQueue.take();
@@ -42,40 +35,62 @@ public class ClientSenderThread implements Runnable {
 				// TODO We will now send this packet to all players via broadcast.
 				
 				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
-				Client client = clientTable.get(next.name);
+				Client client = clientTable.get(clientName);
 				executeEvent(client, next.event);
-				
-				// We send token to the next client
-				for (Player player: players) {
-					// Get this client. Determine next person in line.
-					if (player.name.equals(next.name)) {
-						int index = players.indexOf(player);
-						int size = players.size();
-						MPacket tokenSend = new MPacket(player.name, MPacket.TOKEN, MPacket.TOKEN_SEND);
-						
-						Player tokenPlayer = null; 
-						
-						if (index == (size-1)) {
-							// Pass token to first person.
-							tokenPlayer = players.get(0);
-						} else {
-							tokenPlayer = players.get(index+1); 
-						}
-						
-						// Send token to tokenPlayer.
-						// ASSUME: We are keeping the mSocket of each player updated once we connect!
-						tokenPlayer.mSocket.writeObject(tokenSend);
-						
-						break;
-					}
-				}
-				
 				
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
     	}
+        
+        
+        while (players.size() <= 1) {
+        	if (eventQueue.size() >= 1) {
+        		try {
+        			
+        			// Event Queue only stores events for this client.
+    				MPacket next = eventQueue.take();
+    				
+    				// TODO We will now send this packet to all players via broadcast.
+    				
+    				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
+    				Client client = clientTable.get(clientName);
+    				executeEvent(client, next.event);
+    				
+    			} catch (InterruptedException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			}
+        	}
+        }
+        
+        // We send token to the next client
+		for (Player player: players) {
+			// Get this client. Determine next person in line.
+			if (player.name.equals(clientName)) {
+				int index = players.indexOf(player);
+				int size = players.size();
+				MPacket tokenSend = new MPacket(player.name, MPacket.TOKEN, MPacket.TOKEN_SEND);
+				
+				Player tokenPlayer = null; 
+				
+				if (index == (size-1)) {
+					// Pass token to first person.
+					tokenPlayer = players.get(0);
+				} else {
+					tokenPlayer = players.get(index+1); 
+				}
+				
+				// Send token to tokenPlayer.
+				// ASSUME: We are keeping the mSocket of each player updated once we connect!
+				//tokenPlayer.mSocket.writeObject(tokenSend);
+				
+				//TODO Use writeObject with error!
+				tokenPlayer.mSocket.writeObjectNoError(tokenSend);
+				break;
+			}
+		}
     }
     
     private void executeEvent (Client client, int event) throws UnsupportedOperationException {

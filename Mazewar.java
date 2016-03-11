@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.List;
@@ -72,6 +74,12 @@ public class Mazewar extends JFrame {
          */
         private Mazewar mazewar = null;
         private MSocket mSocket = null;
+        
+        /*
+         * The Client will also be listening on a ServerSocket
+         */
+        
+        private ServerSocket serverSocket = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -178,11 +186,21 @@ public class Mazewar extends JFrame {
                   Mazewar.quit();
                 }
                 
+                
+                // Socket b/w Client <-> Central Naming Server
                 this.socket = new Socket(serverHost, serverPort);
                 this.out = new ObjectOutputStream(socket.getOutputStream());
                 
+                // Server Socket for Client
+                this.serverSocket = new ServerSocket(0);
+                
+                // Send in hello packet the ip and port others can connect to this client on.
+                InetSocketAddress sockaddr = (InetSocketAddress) this.serverSocket.getLocalSocketAddress();
+                String ip = sockaddr.getAddress().getHostAddress();
+                int port = this.serverSocket.getLocalPort();
+                
                 //Send hello packet to server
-                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT);
+                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT,ip ,port);
                 hello.mazeWidth = mazeWidth;
                 hello.mazeHeight = mazeHeight;
                 
@@ -194,6 +212,10 @@ public class Mazewar extends JFrame {
                 
                 //This should be our client list. We need to establish connections to everyone in this list before proceeding.
                 MPacket response = (MPacket) in.readObject();
+                while (response.event != MPacket.HELLO_RESP) {
+                	response = (MPacket) in.readObject();
+                }
+                
                 if(Debug.debug) System.out.println("Received response from server: " + response.toString());
                 
                 this.playerList = response.players;
@@ -208,13 +230,15 @@ public class Mazewar extends JFrame {
 		                        guiClient = new GUIClient(name, eventQueue);
 		                        maze.addClientAt(guiClient, player.point, player.direction);
 		                        this.addKeyListener(guiClient);
+		                        this.setName(name);
 		                        clientTable.put(player.name, guiClient);
 		                }else{
 		                	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
 		                		
 		                		// Only need to connect to remote clients!
-		                		//TODO - CONNECT TO EACH CLIENT ON A RANDOM PORT
+		                		// Connect to each client on their server port.
 		                		player.mSocket = new MSocket(player.ip, player.port);
+		                		player.mSocket.writeObjectNoError(hello);
 		                		System.out.println("Connected to remote client: " + player.name);
 		                		
 		                        RemoteClient remoteClient = new RemoteClient(player.name);
@@ -308,11 +332,11 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	new Thread(new ClientConnectionThread()).start();
+        	new Thread(new ClientConnectionThread(serverSocket, playerList, clientTable, maze, eventQueue, this.getName())).start();
         	
             // Start a new listener thread for the central naming server
             new Thread(new ClientListenerThread(in,out,
-                    clientTable, maze, playerList, eventQueue)).start();
+                    clientTable, maze, playerList, eventQueue, this.getName())).start();
         	
         	// There may be an issue here - we want to avoid making a thread for this.player in playerList.
             /*for(Player player : playerList) {

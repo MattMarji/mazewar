@@ -212,6 +212,10 @@ public class Mazewar extends JFrame {
                 
                 //This should be our client list. We need to establish connections to everyone in this list before proceeding.
                 MPacket response = (MPacket) in.readObject();
+                while (response.event != MPacket.HELLO_RESP) {
+                	response = (MPacket) in.readObject();
+                }
+                
                 if(Debug.debug) System.out.println("Received response from server: " + response.toString());
                 
                 this.playerList = response.players;
@@ -226,6 +230,7 @@ public class Mazewar extends JFrame {
 		                        guiClient = new GUIClient(name, eventQueue);
 		                        maze.addClientAt(guiClient, player.point, player.direction);
 		                        this.addKeyListener(guiClient);
+		                        this.setName(name);
 		                        clientTable.put(player.name, guiClient);
 		                }else{
 		                	if(Debug.debug)System.out.println("Adding remoteClient: " + player);
@@ -233,6 +238,7 @@ public class Mazewar extends JFrame {
 		                		// Only need to connect to remote clients!
 		                		// Connect to each client on their server port.
 		                		player.mSocket = new MSocket(player.ip, player.port);
+		                		player.mSocket.writeObjectNoError(hello);
 		                		System.out.println("Connected to remote client: " + player.name);
 		                		
 		                        RemoteClient remoteClient = new RemoteClient(player.name);
@@ -326,11 +332,11 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	new Thread(new ClientConnectionThread(this.serverSocket)).start();
+        	new Thread(new ClientConnectionThread(serverSocket, playerList, clientTable, maze, eventQueue, this.getName())).start();
         	
             // Start a new listener thread for the central naming server
             new Thread(new ClientListenerThread(in,out,
-                    clientTable, maze, playerList, eventQueue)).start();
+                    clientTable, maze, playerList, eventQueue, this.getName())).start();
         	
         	// There may be an issue here - we want to avoid making a thread for this.player in playerList.
             /*for(Player player : playerList) {
