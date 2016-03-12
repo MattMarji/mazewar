@@ -5,14 +5,22 @@
 		<item value="1200" key="dialogWidth"/>
 		<list key="textEntries">
 			<item value="1"/>
+			<item value="1"/>
+			<item value="1"/>
 		</list>
 		<list key="orderedElements">
+			<item value="org.eclipse.ui.navigate.showIn(org.eclipse.ui.navigate.showIn.targetId=org.eclipse.ui.views.ProblemView)"/>
+			<item value="org.eclipse.pde.runtime.LogView"/>
 			<item value="org.eclipse.debug.ui.actions.WatchCommand"/>
 		</list>
 		<list key="orderedProviders">
 			<item value="org.eclipse.ui.commands"/>
+			<item value="org.eclipse.e4.ui.parts"/>
+			<item value="org.eclipse.ui.commands"/>
 		</list>
 		<list key="textArray">
+			<item value="probl"/>
+			<item value="error"/>
 			<item value="watch"/>
 		</list>
 	</section>

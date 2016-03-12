@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Server {
     
@@ -21,7 +22,7 @@ public class Server {
     private List<Socket> socketList = null; //A list of MSockets
     private List<String> clientList = null;
     private List<Player> playerList = null;
-    public Boolean oneTime = true;
+    public AtomicBoolean oneTime;
     
     
     /*
@@ -36,6 +37,7 @@ public class Server {
         this.socketList = new ArrayList<Socket>();
         this.clientList = new ArrayList<String>();
         this.playerList = new ArrayList<Player>();
+        this.oneTime = new AtomicBoolean(true);
     }
         
     /*

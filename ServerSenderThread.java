@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -15,11 +16,11 @@ public class ServerSenderThread implements Runnable {
     private List<ObjectOutputStream> outList = null;
     private Socket socket = null;
     private MPacket helloPacket = null;
-    private Boolean oneTime = null;
+    private AtomicBoolean oneTime;
     private String ip = null;
     private int port = 0;
     
-    public ServerSenderThread(List<Socket> socketList, List<Player> playerList, List<ObjectOutputStream> outList, Socket socket, MPacket helloPacket, Boolean oneTime, String ip, int port){
+    public ServerSenderThread(List<Socket> socketList, List<Player> playerList, List<ObjectOutputStream> outList, Socket socket, MPacket helloPacket, AtomicBoolean oneTime, String ip, int port){
         this.socketList = socketList;
         this.playerList = playerList;
         this.outList = outList;
@@ -69,13 +70,11 @@ public class ServerSenderThread implements Runnable {
                 out.writeObject(helloResponse);
             }
             
-            
-            // TODO - THIS STILL IS INCORRECT
-            if(oneTime && playerList.size() <= 1) {
+            if(oneTime.get()) {
             	ObjectOutputStream tokenHolder = outList.get(0);
                 MPacket tokenSend = new MPacket("CNS", MPacket.TOKEN, MPacket.TOKEN_SEND);
                 tokenHolder.writeObject(tokenSend);
-                oneTime = false;
+                oneTime.set(false);
             }
             
             

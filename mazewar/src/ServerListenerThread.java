@@ -3,7 +3,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,12 +21,12 @@ public class ServerListenerThread implements Runnable {
     private List<String> clientList = null;
     private List<Player> playerList = null;
     private Boolean helloRecvd = false;
-    private Boolean oneTime = false;
+    private AtomicBoolean oneTime;
     
     /*There is a listener thread per client here, so I think we realistically only need to look at the one variable, and don't need to store them on a per client basis.
     If it turns out that we do need to keep them on a per client basis, then uncomment the array stuff both here and below*/
 
-    public ServerListenerThread(Socket socket, List<ObjectOutputStream> out, int clientCount, List<Socket> socketList, List<String> clientList, List<Player> playerList, Boolean oneTime){
+    public ServerListenerThread(Socket socket, List<ObjectOutputStream> out, int clientCount, List<Socket> socketList, List<String> clientList, List<Player> playerList, AtomicBoolean oneTime){
         this.socket = socket;
 		this.clientSeqNum = 0;
 		this.recvdPkts = new HashMap<Integer, MPacket>();

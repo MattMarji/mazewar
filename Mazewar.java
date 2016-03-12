@@ -30,12 +30,14 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -74,6 +76,7 @@ public class Mazewar extends JFrame {
          */
         private Mazewar mazewar = null;
         private MSocket mSocket = null;
+        private AtomicBoolean hasToken;
         
         /*
          * The Client will also be listening on a ServerSocket
@@ -194,13 +197,17 @@ public class Mazewar extends JFrame {
                 // Server Socket for Client
                 this.serverSocket = new ServerSocket(0);
                 
+                String ip;
+                
+                ip = InetAddress.getLocalHost().getHostAddress();
+                
                 // Send in hello packet the ip and port others can connect to this client on.
                 InetSocketAddress sockaddr = (InetSocketAddress) this.serverSocket.getLocalSocketAddress();
-                String ip = sockaddr.getAddress().getHostAddress();
+                //String ip = sockaddr.getAddress().getHostAddress();
                 int port = this.serverSocket.getLocalPort();
                 
                 //Send hello packet to server
-                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT,ip ,port);
+                MPacket hello = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT,ip,port);
                 hello.mazeWidth = mazeWidth;
                 hello.mazeHeight = mazeHeight;
                 
@@ -223,12 +230,22 @@ public class Mazewar extends JFrame {
                 //Initialize hash table of clients to client name 
                 clientTable = new Hashtable<String, Client>(); 
                 
+                //Initialize the AtomicBoolean to use in the future
+                hasToken = new AtomicBoolean(false);
+                
+                int idx;
+                Point spawnPoint;
+                
                 for(Player player : response.players) {
+                	idx = response.players.indexOf(player);
+            		spawnPoint = new Point(idx,idx);
+            		
 	        		try {
 						if(player.name.equals(name)){
 		                	if(Debug.debug)System.out.println("Adding guiClient: " + player);
 		                        guiClient = new GUIClient(name, eventQueue);
-		                        maze.addClientAt(guiClient, player.point, player.direction);
+		                        //maze.addClientAt(guiClient, player.point, player.direction);
+		                        maze.addClientAt(guiClient, spawnPoint, player.direction);
 		                        this.addKeyListener(guiClient);
 		                        this.setName(name);
 		                        clientTable.put(player.name, guiClient);
@@ -242,7 +259,8 @@ public class Mazewar extends JFrame {
 		                		System.out.println("Connected to remote client: " + player.name);
 		                		
 		                        RemoteClient remoteClient = new RemoteClient(player.name);
-		                        maze.addClientAt(remoteClient, player.point, player.direction);
+		                        //maze.addClientAt(remoteClient, player.point, player.direction);
+		                        maze.addClientAt(remoteClient, spawnPoint, player.direction);
 		                        clientTable.put(player.name, remoteClient);
 		                }
 						
@@ -332,11 +350,11 @@ public class Mazewar extends JFrame {
         */
         private void startThreads(){
         	
-        	new Thread(new ClientConnectionThread(serverSocket, playerList, clientTable, maze, eventQueue, this.getName())).start();
+        	new Thread(new ClientConnectionThread(serverSocket, playerList, clientTable, maze, eventQueue, this.getName(), hasToken)).start();
         	
             // Start a new listener thread for the central naming server
             new Thread(new ClientListenerThread(in,out,
-                    clientTable, maze, playerList, eventQueue, this.getName())).start();
+                    clientTable, maze, playerList, eventQueue, this.getName(), hasToken)).start();
         	
         	// There may be an issue here - we want to avoid making a thread for this.player in playerList.
             /*for(Player player : playerList) {

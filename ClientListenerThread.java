@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class ClientListenerThread implements Runnable {
@@ -17,9 +18,10 @@ public class ClientListenerThread implements Runnable {
     private List<Player> players = null;
     private BlockingQueue eventQueue = null;
     private String clientName;
+    public AtomicBoolean hasToken;
     
     public ClientListenerThread(ObjectInputStream in, ObjectOutputStream out,
-            Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue, String clientName){
+            Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue, String clientName, AtomicBoolean hasToken){
 		this.in = in;
 		this.clientTable = clientTable;
 		this.maze = maze;
@@ -27,6 +29,7 @@ public class ClientListenerThread implements Runnable {
 		this.eventQueue = eventQueue;
 		this.out = out;
 		this.clientName = clientName;
+		this.hasToken = hasToken;
 		
 		if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
 	}
@@ -54,9 +57,10 @@ public class ClientListenerThread implements Runnable {
                 
                 // If it is a TOKEN packet, accept token and execute next event!
                 if (received.event == MPacket.TOKEN_SEND) {
+                	hasToken.set(true);
                 	System.out.println("Received " + received + "Received Type: " + received.event);
                 	
-                     new Thread(new ClientSenderThread(eventQueue, clientTable, players, clientName)).start();
+                     new Thread(new ClientSenderThread(eventQueue, clientTable, players, clientName, hasToken)).start();
                 	/*Pop off the eventQueue, execute event, pass on the token. So we need to have access to the clientList
                 	 * Don't actually want to do the work here I don't think.
                 	 * eventQueue.take(); -- can be done on listener/sender 
@@ -86,7 +90,13 @@ public class ClientListenerThread implements Runnable {
     	if (newPlayers.size() <= 1)
     		return;
     	
+    	int idx;
+    	Point spawnPoint;
+    	
     	for(Player player : newPlayers) {
+    		
+    		idx = newPlayers.indexOf(player);
+    		spawnPoint = new Point(idx,idx);
     		
     		// Compare names to determine if we already have them.
     		for (Player currPlayer : this.players) {
@@ -108,7 +118,8 @@ public class ClientListenerThread implements Runnable {
 					
 					// Add client to our maze!
 					RemoteClient remoteClient = new RemoteClient(player.name);
-                    maze.addClientAt(remoteClient, player.point, player.direction);
+                    //maze.addClientAt(remoteClient, player.point, player.direction);
+					maze.addClientAt(remoteClient, spawnPoint, player.direction);
                     clientTable.put(player.name, remoteClient);
 					
                     System.out.println("Added Player " + player.name + " to playerList.");

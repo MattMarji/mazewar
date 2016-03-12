@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientSenderThread implements Runnable {
 
@@ -14,19 +15,21 @@ public class ClientSenderThread implements Runnable {
     private Hashtable<String, Client> clientTable = null;
     private List<Player> players = null;
     private String clientName = null;
+    private AtomicBoolean hasToken;
     
     public ClientSenderThread(BlockingQueue eventQueue,
                               Hashtable<String, Client> clientTable,
                               List<Player> players,
-                              String clientName){
+                              String clientName, AtomicBoolean hasToken){
         this.eventQueue = eventQueue;
         this.clientTable = clientTable;
         this.players = players;
         this.clientName = clientName;
+        this.hasToken = hasToken;
     }
     
     public void run() {
-        if(Debug.debug) System.out.println("Starting ClientSenderThread");
+        if(Debug.debug) System.out.println("Starting ClientSenderThread. The value of hasToken is: " + hasToken);
         
         while (players.size() <= 1) {
         	if (eventQueue.size() >= 1) {
@@ -80,20 +83,16 @@ public class ClientSenderThread implements Runnable {
 				
 				Player tokenPlayer = null; 
 				
-				//TODO Modulo size logic
-				if (index == (size-1)) {
-					// Pass token to first person.
-					tokenPlayer = players.get(0);
-				} else {
-					tokenPlayer = players.get(index+1); 
-				}
-				
+
+				tokenPlayer = players.get((index + 1) % size);
+								
 				// Send token to tokenPlayer.
 				// ASSUME: We are keeping the mSocket of each player updated once we connect!
 				//tokenPlayer.mSocket.writeObject(tokenSend);
 				
 				//TODO Use writeObject with error!
 				tokenPlayer.mSocket.writeObjectNoError(tokenSend);
+				hasToken.set(false);
 				break;
 			}
 		}
