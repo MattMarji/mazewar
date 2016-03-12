@@ -37,7 +37,7 @@ public class ClientSenderThread implements Runnable {
         			// Event Queue only stores events for this client.
     				MPacket next = eventQueue.take();
     				
-    				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
+    				// TODO We block and wait for all acks via pseudo-TCP and then we executeEvent!
     				Client client = clientTable.get(clientName);
     				executeEvent(client, next.event);
     				
@@ -51,8 +51,8 @@ public class ClientSenderThread implements Runnable {
         if (eventQueue.size() >= 1) {
         	try {
     			
-    			// Event Queue only stores events for this client.
-				MPacket next = eventQueue.take();
+    			//TODO: MAKE SURE WE AREN'T REMOVING THE PACKET FROM THE QUEUE HERE! Event Queue only stores events for this client.
+				MPacket next = eventQueue.peek();
 				
 				// TODO We will now send this packet to all players via broadcast.
 				for (Player player: players) {

@@ -50,7 +50,7 @@ public class ClientConnectionThread implements Runnable {
 	   	    	mSocket = new MSocket(socket);
 	   	    	
 	   	    	// We start a thread to listen on this socket for incoming messages.
-	   	    	new Thread(new ClientEventListenerThread(mSocket, playerList, ackList, clientTable, maze, eventQueue, name, hasToken)).start();
+	   	    	new Thread(new ClientEventListenerThread(mSocket, playerList, ackList, clientTable, maze, eventQueue, name, hasToken, RETRANSMISSION_TIMEOUT)).start();
 	   	    	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

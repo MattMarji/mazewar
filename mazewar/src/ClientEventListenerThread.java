@@ -3,6 +3,8 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,11 +21,12 @@ public class ClientEventListenerThread implements Runnable {
     private BlockingQueue eventQueue = null;
     private String name = null;
     private AtomicBoolean hasToken;
+    private double retransTimer = 0;
     
     
     // This thread will be spawned once per client and will listen to a particular client for events
     public ClientEventListenerThread(MSocket mSocket, List<Player> players, List<Boolean> ackList,
-            Hashtable<String, Client> clientTable, Maze maze, BlockingQueue eventQueue, String name, AtomicBoolean hasToken){
+            Hashtable<String, Client> clientTable, Maze maze, BlockingQueue eventQueue, String name, AtomicBoolean hasToken, double retransmissionTimer){
 		this.mSocket = mSocket;
 		this.clientTable = clientTable;
 		this.maze = maze;
@@ -32,6 +35,7 @@ public class ClientEventListenerThread implements Runnable {
 		this.eventQueue = eventQueue;
 		this.name = name;
 		this.hasToken = hasToken;
+		this.retransTimer = retransmissionTimer;
 		
 		if(Debug.debug) System.out.println("Instatiating ClientEventListenerThread");
 	}
@@ -53,10 +57,40 @@ public class ClientEventListenerThread implements Runnable {
                 	new Thread(new ClientSenderThread(eventQueue, clientTable, players, name, hasToken)).start();
                 	
                 	//TODO Start the ACK thread.
+                	new Thread(new ClientAckThread(ackList, eventQueue, hasToken, clientTable, name, players)).start();
+                	
+                	
                 	
                 	//TODO Start retransmission timer and wait for ACK. MUST: Check to see if Java Thread Timer can interrupt.
+                	Timer retransTimeout = new Timer();
                 	
+                	TimerTask retrans = new TimerTask() {
+						
+						@Override
+						public void run() {
+							// TODO find the client we're connected to and re-send the action to them. 
+							//The mSocket we have here should be what is connecting me to the client who I haven't gotten an Ack from. 
+							MPacket retransPkt = (MPacket) eventQueue.peek();
+							mSocket.writeObjectNoError(retransPkt);
+							
+						}
+					};
+                	
+                	retransTimeout.schedule(retrans, (long) retransTimer);
                 	//TODO Wait for ACK from this client based on the event that I just sent.
+                	
+                	//This is blocking, but should be interrupted by the Timer! 
+                	received = (MPacket) mSocket.readObjectNoError();
+                	
+                	//TODO CHANGE THIS TO MPacket.ACK when we've extended the MPacket class to include ACKs.
+                	if(received.event == MPacket.HELLO_RESP){
+                		//This means we're good, we got the ACK, we just need to cancel the scheduled timer interrupt
+                		retransTimeout.cancel();
+                		retransTimeout.purge();
+                		//TODO: THIS NEXT BIT IS WRONG. We need to set the flag in the ackList to true for this guy.
+                		players.indexOf(clientTable.get(received.name));
+                	}
+                	
                 	//Set ACK flag in ackList to true
                 	
                 } 
@@ -75,7 +109,7 @@ public class ClientEventListenerThread implements Runnable {
                 			while(hasToken.get()) {
                 				;
                 			}
-                			System.out.println("Surrendured token");
+                			System.out.println("Surrendered token");
                 			ackList.add(false);
                 		}
                 	}
