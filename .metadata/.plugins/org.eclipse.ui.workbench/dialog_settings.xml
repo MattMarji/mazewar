@@ -7,21 +7,25 @@
 			<item value="1"/>
 			<item value="1"/>
 			<item value="1"/>
+			<item value="1"/>
 		</list>
 		<list key="orderedElements">
+			<item value="org.eclipse.ui.views.showView(org.eclipse.ui.views.showView.viewId=org.eclipse.debug.ui.VariableView)"/>
+			<item value="org.eclipse.jdt.debug.ui.Watch"/>
 			<item value="org.eclipse.ui.navigate.showIn(org.eclipse.ui.navigate.showIn.targetId=org.eclipse.ui.views.ProblemView)"/>
 			<item value="org.eclipse.pde.runtime.LogView"/>
-			<item value="org.eclipse.debug.ui.actions.WatchCommand"/>
 		</list>
 		<list key="orderedProviders">
 			<item value="org.eclipse.ui.commands"/>
-			<item value="org.eclipse.e4.ui.parts"/>
+			<item value="org.eclipse.ui.actions"/>
 			<item value="org.eclipse.ui.commands"/>
+			<item value="org.eclipse.e4.ui.parts"/>
 		</list>
 		<list key="textArray">
+			<item value="variables"/>
+			<item value="watch"/>
 			<item value="probl"/>
 			<item value="error"/>
-			<item value="watch"/>
 		</list>
 	</section>
 	<section name="ImportExportAction">

@@ -23,36 +23,48 @@ public class ClientAckThread implements Runnable{
     }
     
     public void run() {
+    	
+    	System.out.println("Starting a CAT");
     	if(hasToken.get()) {
     		
-    	}
-    	
-    	//Tight loop here until the ackList contains all true values, meaning we've got all our ACKs
-    	while(ackList.contains(false)) {
-    		try {
-				Thread.sleep(20);
+    		while(players.size() ==1 ) {
+    			;
+    		}
+    		
+    		if(eventQueue.size() < 1) {
+    			handOffToken(players);
+    			return;
+    		}
+    		
+	    	//Tight loop here until the ackList contains all true values, meaning we've got all our ACKs
+	    	while(ackList.contains(false)) {
+	    		try {
+					Thread.sleep(20);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	    	}
+	    	
+	    	//If we've left, the loop, then we've got all the ACKs for this action, so we should pull it from the head of the queue, do it, and then pass off the token
+	    	System.out.println("Received ACKs from everyone for event!");
+	    	MPacket nextEvent = null;
+			try {
+				nextEvent = (MPacket) eventQueue.take();
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+	    	
+	    	Client client = clientTable.get(clientName);
+	    	executeEvent(client, nextEvent.event);
+	    	
+	    	handOffToken(players);
+	    	
+	    	return;
     	}
-    	
-    	//If we've left, the loop, then we've got all the ACKs for this action, so we should pull it from the head of the queue, do it, and then pass off the token
-    	MPacket nextEvent = null;
-		try {
-			nextEvent = (MPacket) eventQueue.take();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-    	Client client = clientTable.get(clientName);
-    	executeEvent(client, nextEvent.event);
-    	
-    	handOffToken(players);
-    	
+    	System.out.println("Somehow spawned ackThread but didn't have the token.");
     	return;
-
     }
     
     private void handOffToken (List<Player> players) {
@@ -73,6 +85,10 @@ public class ClientAckThread implements Runnable{
 				//tokenPlayer.mSocket.writeObject(tokenSend);
 				
 				//TODO Use writeObject with error!
+				System.out.println("Handed off token");
+				while(tokenPlayer.mSocket == null ) {
+					;
+				}
 				tokenPlayer.mSocket.writeObjectNoError(tokenSend);
 				hasToken.set(false);
 				break;

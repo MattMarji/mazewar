@@ -27,6 +27,10 @@ public class MPacket implements Serializable {
     /*Token actions*/
     public static final int TOKEN_SEND = 301;
     
+    /*ACK Types*/
+    public static final int EVENT_ACK = 401;
+    public static final int TOKEN_ACK = 402;
+    
     //These fields characterize the event  
     public int type;
     public int event; 
