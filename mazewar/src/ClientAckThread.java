@@ -50,6 +50,8 @@ public class ClientAckThread implements Runnable{
     	executeEvent(client, nextEvent.event);
     	
     	handOffToken(players);
+    	
+    	return;
 
     }
     

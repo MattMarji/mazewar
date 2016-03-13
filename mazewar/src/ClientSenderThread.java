@@ -49,28 +49,21 @@ public class ClientSenderThread implements Runnable {
         }
 
         if (eventQueue.size() >= 1) {
-        	try {
-    			
-    			//TODO: MAKE SURE WE AREN'T REMOVING THE PACKET FROM THE QUEUE HERE! Event Queue only stores events for this client.
-				MPacket next = eventQueue.peek();
-				
-				// TODO We will now send this packet to all players via broadcast.
-				for (Player player: players) {
-					// Get this client. Determine next person in line.
-					if (!player.name.equals(clientName)) {
-						//TODO Use writeObject with error!
-						player.mSocket.writeObjectNoError(next);
-					}
+        	//TODO: MAKE SURE WE AREN'T REMOVING THE PACKET FROM THE QUEUE HERE! Event Queue only stores events for this client.
+			MPacket next = eventQueue.peek();
+			
+			// TODO We will now send this packet to all players via broadcast.
+			for (Player player: players) {
+				// Get this client. Determine next person in line.
+				if (!player.name.equals(clientName)) {
+					//TODO Use writeObject with error!
+					player.mSocket.writeObjectNoError(next);
 				}
-				
-				// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
-				Client client = clientTable.get(clientName);
-				executeEvent(client, next.event);
-				
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
+			
+			// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
+			Client client = clientTable.get(clientName);
+			executeEvent(client, next.event);
     	}
         
         // We send token to the next client

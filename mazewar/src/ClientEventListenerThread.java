@@ -56,19 +56,17 @@ public class ClientEventListenerThread implements Runnable {
                 	hasToken.set(true);
                 	new Thread(new ClientSenderThread(eventQueue, clientTable, players, name, hasToken)).start();
                 	
-                	//TODO Start the ACK thread.
-                	new Thread(new ClientAckThread(ackList, eventQueue, hasToken, clientTable, name, players)).start();
+                	//Start the ACK thread.
+                	new Thread(new ClientAckThread(ackList, eventQueue, hasToken, clientTable, name, players)).start();                	
                 	
                 	
-                	
-                	//TODO Start retransmission timer and wait for ACK. MUST: Check to see if Java Thread Timer can interrupt.
+                	//Start retransmission timer and wait for ACK. TODO: Check to see if Java Thread Timer can interrupt.
                 	Timer retransTimeout = new Timer();
                 	
                 	TimerTask retrans = new TimerTask() {
 						
 						@Override
 						public void run() {
-							// TODO find the client we're connected to and re-send the action to them. 
 							//The mSocket we have here should be what is connecting me to the client who I haven't gotten an Ack from. 
 							MPacket retransPkt = (MPacket) eventQueue.peek();
 							mSocket.writeObjectNoError(retransPkt);
@@ -77,13 +75,12 @@ public class ClientEventListenerThread implements Runnable {
 					};
                 	
                 	retransTimeout.schedule(retrans, (long) retransTimer);
-                	//TODO Wait for ACK from this client based on the event that I just sent.
+                	//Wait for ACK from this client based on the event that I just sent.
                 	
                 	//This is blocking, but should be interrupted by the Timer! 
                 	received = (MPacket) mSocket.readObjectNoError();
                 	
-                	//TODO CHANGE THIS TO MPacket.ACK when we've extended the MPacket class to include ACKs.
-                	if(received.event == MPacket.HELLO_RESP){
+                	if(received.event == MPacket.ACK){
                 		//This means we're good, we got the ACK, we just need to cancel the scheduled timer interrupt
                 		retransTimeout.cancel();
                 		retransTimeout.purge();
@@ -91,7 +88,7 @@ public class ClientEventListenerThread implements Runnable {
                 		players.indexOf(clientTable.get(received.name));
                 	}
                 	
-                	//Set ACK flag in ackList to true
+                	//TODO Set ACK flag in ackList to true
                 	
                 } 
                 
