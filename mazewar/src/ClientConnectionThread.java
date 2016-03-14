@@ -20,7 +20,7 @@ public class ClientConnectionThread implements Runnable {
 	Maze maze = null;
 	BlockingQueue eventQueue = null;
 	String name = null;
-	double RETRANSMISSION_TIMEOUT = 0;
+	double RETRANSMISSION_TIMEOUT = 100*2.25;
 	AtomicBoolean hasToken;
 	
     public ClientConnectionThread(ServerSocket serverSocket, List<Player> playerList, Hashtable<String, Client> clientTable, Maze maze, BlockingQueue eventQueue, String name, AtomicBoolean hasToken){

@@ -48,47 +48,19 @@ public class ClientSenderThread implements Runnable {
         	}
         }
 
-        if (eventQueue.size() >= 1) {
-        	//TODO: MAKE SURE WE AREN'T REMOVING THE PACKET FROM THE QUEUE HERE! Event Queue only stores events for this client.
+        if(eventQueue.size() >= 1){
 			MPacket next = eventQueue.peek();
 			
-			// TODO We will now send this packet to all players via broadcast.
+			//We will now send this packet to all players via broadcast.
 			for (Player player: players) {
 				// Get this client. Determine next person in line.
 				if (!player.name.equals(clientName)) {
 					//TODO Use writeObject with error!
-					player.mSocket.writeObjectNoError(next);
+					System.out.println("Sending event!");
+					player.mSocket.writeObject(next);
 				}
 			}
-			
-			// TODO We block and wait for all acks via sudo-TCP and then we executeEvent!
-			Client client = clientTable.get(clientName);
-			executeEvent(client, next.event);
-    	}
-        
-        // We send token to the next client
-		for (Player player: players) {
-			// Get this client. Determine next person in line.
-			if (player.name.equals(clientName)) {
-				int index = players.indexOf(player);
-				int size = players.size();
-				MPacket tokenSend = new MPacket(player.name, MPacket.TOKEN, MPacket.TOKEN_SEND);
-				
-				Player tokenPlayer = null; 
-				
-
-				tokenPlayer = players.get((index + 1) % size);
-								
-				// Send token to tokenPlayer.
-				// ASSUME: We are keeping the mSocket of each player updated once we connect!
-				//tokenPlayer.mSocket.writeObject(tokenSend);
-				
-				//TODO Use writeObject with error!
-				tokenPlayer.mSocket.writeObjectNoError(tokenSend);
-				hasToken.set(false);
-				break;
-			}
-		}
+        }
     }
     
     private void executeEvent (Client client, int event) throws UnsupportedOperationException {

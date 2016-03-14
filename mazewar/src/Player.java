@@ -18,7 +18,7 @@ public class Player implements Serializable {
     public ObjectOutputStream out;
     public ObjectInputStream in;
     public Socket socket;
-    public MSocket mSocket;
+    public MSocket mSocket = null;
 
     public Player(String name, Point point, int direction){
         this.point = point;

@@ -37,7 +37,7 @@ public class ClientEventListenerThread implements Runnable {
 		this.hasToken = hasToken;
 		this.retransTimer = retransmissionTimer;
 		
-		if(Debug.debug) System.out.println("Instatiating ClientEventListenerThread");
+		if(Debug.debug) System.out.println("Instatiating ClientEventListenerThread, retransmission timeout is " + this.retransTimer);
 	}
 
     public void run() {
@@ -53,6 +53,9 @@ public class ClientEventListenerThread implements Runnable {
                 
                 // If it is a TOKEN packet, accept token and execute next event!
                 if (received.event == MPacket.TOKEN_SEND) {
+                	
+                	//TODO Check eventQueue. If no events, hand off token.
+                	
                 	hasToken.set(true);
                 	new Thread(new ClientSenderThread(eventQueue, clientTable, players, name, hasToken)).start();
                 	
@@ -61,14 +64,15 @@ public class ClientEventListenerThread implements Runnable {
                 	
                 	
                 	//Start retransmission timer and wait for ACK. TODO: Check to see if Java Thread Timer can interrupt.
-                	Timer retransTimeout = new Timer();
+                	//Timer retransTimeout = new Timer();
                 	
-                	TimerTask retrans = new TimerTask() {
+                	/*TimerTask retrans = new TimerTask() {
 						
 						@Override
 						public void run() {
 							//The mSocket we have here should be what is connecting me to the client who I haven't gotten an Ack from. 
 							MPacket retransPkt = (MPacket) eventQueue.peek();
+							System.out.println("I'm about to retransmit the following: " + retransPkt);
 							mSocket.writeObjectNoError(retransPkt);
 							
 						}
@@ -78,18 +82,21 @@ public class ClientEventListenerThread implements Runnable {
                 	//Wait for ACK from this client based on the event that I just sent.
                 	
                 	//This is blocking, but should be interrupted by the Timer! 
-                	received = (MPacket) mSocket.readObjectNoError();
+                	received = (MPacket) mSocket.readObjectNoError();*/
                 	
                 	if(received.event == MPacket.ACK){
                 		//This means we're good, we got the ACK, we just need to cancel the scheduled timer interrupt
-                		retransTimeout.cancel();
-                		retransTimeout.purge();
+                		//retransTimeout.cancel();
+                		//retransTimeout.purge();
                 		//TODO: THIS NEXT BIT IS WRONG. We need to set the flag in the ackList to true for this guy.
-                		players.indexOf(clientTable.get(received.name));
+                		for (Player player: players) {
+                			if (player.name.equals(received.name)) {
+                				// Get their index, set flag in acklist
+                				ackList.set(players.indexOf(player), true);
+                				break;
+                			}
+                		}
                 	}
-                	
-                	//TODO Set ACK flag in ackList to true
-                	
                 } 
                 
                 // If it is another CLIENT introducing themselves, we accept!
@@ -100,18 +107,23 @@ public class ClientEventListenerThread implements Runnable {
                 	for (Player player: players) {
                 		if (received.name.equals(player.name)) {
                 			player.mSocket = mSocket;
+                			MPacket tokenSend = new MPacket(player.name, MPacket.TOKEN, MPacket.TOKEN_SEND);
+                			player.mSocket.writeObjectNoError(tokenSend);
                 			//If I have the token, we're assuming that I've sent out an action and could be waiting for acks back from others, so don't add people yo my ack list.
-                			if(hasToken.get())
-                				System.out.println("Has token and waiting in loop.");
-                			while(hasToken.get()) {
-                				;
-                			}
-                			System.out.println("Surrendered token");
-                			ackList.add(false);
+                			//if(hasToken.get())
+                			//	System.out.println("Has token and waiting in loop.");
+                			//while(hasToken.get()) {
+                			//	;
+                			//}
+                			//System.out.println("Surrendered token");
+                			//ackList.add(false);
                 		}
                 	}
                 } else {
                 	try {
+                		//Create an ACK packet here and send it to the client who sent me the action. (this is the right socket)
+                		MPacket eventAck = new MPacket(MPacket.ACK, MPacket.EVENT_ACK);
+                		mSocket.writeObjectNoError(eventAck);
                 		// We received the event. We now want to send an ACK.
                     	executeEvent(client, received.event);
                     	

@@ -6,20 +6,20 @@
 	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item value="false" key="isRegEx"/>
-		<item value="hasToken" key="selection"/>
+		<item value="players" key="selection"/>
 		<item value="false" key="casesensitive"/>
 		<item value="false" key="incremental"/>
 		<item value="true" key="wrap"/>
 		<item value="false" key="wholeword"/>
 		<list key="findhistory">
+			<item value="players"/>
+			<item value="NetworkErrorSender"/>
+			<item value="take"/>
 			<item value="hasToken"/>
 			<item value="startThreads"/>
 			<item value="getDelay"/>
 			<item value="out"/>
 			<item value="error"/>
-			<item value="connect"/>
-			<item value="player.ip"/>
-			<item value="getRemote"/>
 		</list>
 		<list key="replacehistory">
 		</list>
