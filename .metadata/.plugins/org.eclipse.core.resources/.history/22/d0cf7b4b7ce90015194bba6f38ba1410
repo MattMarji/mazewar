@@ -107,7 +107,7 @@ public class ClientEventListenerThread implements Runnable {
                 	for (Player player: players) {
                 		if (received.name.equals(player.name)) {
                 			player.mSocket = mSocket;
-                			MPacket tokenSend = new MPacket(name, MPacket.HELLO, MPacket.HELLO_INIT);
+                			MPacket tokenSend = new MPacket(player.name, MPacket.TOKEN, MPacket.TOKEN_SEND);
                 			player.mSocket.writeObjectNoError(tokenSend);
                 			//If I have the token, we're assuming that I've sent out an action and could be waiting for acks back from others, so don't add people yo my ack list.
                 			//if(hasToken.get())

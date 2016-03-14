@@ -18,7 +18,7 @@ public class ClientListenerThread implements Runnable {
     private List<Player> players = null;
     private BlockingQueue eventQueue = null;
     private String clientName;
-    private AtomicBoolean latestClient = new AtomicBoolean(true);
+    private AtomicBoolean latestClient;
     public AtomicBoolean hasToken;
    
     
@@ -32,6 +32,7 @@ public class ClientListenerThread implements Runnable {
 		this.out = out;
 		this.clientName = clientName;
 		this.hasToken = hasToken;
+		this.latestClient.set(true);
 		
 		if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
 	}

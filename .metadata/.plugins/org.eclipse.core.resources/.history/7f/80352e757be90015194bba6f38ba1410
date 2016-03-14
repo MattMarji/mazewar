@@ -18,7 +18,7 @@ public class ClientListenerThread implements Runnable {
     private List<Player> players = null;
     private BlockingQueue eventQueue = null;
     private String clientName;
-    private AtomicBoolean latestClient = new AtomicBoolean(true);
+    private AtomicBoolean latestClient;
     public AtomicBoolean hasToken;
    
     
@@ -32,6 +32,7 @@ public class ClientListenerThread implements Runnable {
 		this.out = out;
 		this.clientName = clientName;
 		this.hasToken = hasToken;
+		this.latestClient.set(true);
 		
 		if(Debug.debug) System.out.println("Instatiating ClientListenerThread");
 	}
@@ -54,7 +55,7 @@ public class ClientListenerThread implements Runnable {
                 // If it is a HELLO_RESP from the server, update our Player list and connect to new players
                 if (received.event == MPacket.HELLO_RESP) {
                 	System.out.println("ClientListener: Received " + received + "Received Type: " + received.event);
-                	if(this.latestClient.get()) {
+                	if(this.latestClient.get(true)) {
                 		connectToPeers(received.players);
                 	}
                 	this.latestClient.set(false);

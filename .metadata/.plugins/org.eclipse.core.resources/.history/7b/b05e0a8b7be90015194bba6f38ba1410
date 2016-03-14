@@ -198,6 +198,7 @@ public class Mazewar extends JFrame {
                 this.serverSocket = new ServerSocket(0);
                 
                 //String ip;
+                
                 //ip = InetAddress.getLocalHost().getHostAddress();
                 
                 // Send in hello packet the ip and port others can connect to this client on.

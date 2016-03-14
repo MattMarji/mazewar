@@ -18,9 +18,7 @@ public class ClientListenerThread implements Runnable {
     private List<Player> players = null;
     private BlockingQueue eventQueue = null;
     private String clientName;
-    private AtomicBoolean latestClient = new AtomicBoolean(true);
     public AtomicBoolean hasToken;
-   
     
     public ClientListenerThread(ObjectInputStream in, ObjectOutputStream out,
             Hashtable<String, Client> clientTable, Maze maze, List<Player> players, BlockingQueue eventQueue, String clientName, AtomicBoolean hasToken){
@@ -54,10 +52,7 @@ public class ClientListenerThread implements Runnable {
                 // If it is a HELLO_RESP from the server, update our Player list and connect to new players
                 if (received.event == MPacket.HELLO_RESP) {
                 	System.out.println("ClientListener: Received " + received + "Received Type: " + received.event);
-                	if(this.latestClient.get()) {
-                		connectToPeers(received.players);
-                	}
-                	this.latestClient.set(false);
+                	connectToPeers(received.players);
                 }
                 
                 // If it is a TOKEN packet, accept token and execute next event!
